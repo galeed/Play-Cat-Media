@@ -52,7 +52,7 @@
 
     .cover-art {
       width: 100%;
-      height: 220px;
+      height: 240px;
       background: #2a2a32;
       border-radius: 14px;
       object-fit: cover;
@@ -60,6 +60,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }
 
     .track-info {
@@ -78,6 +79,19 @@
     .track-artist {
       font-size: 0.9rem;
       color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .track-album {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      opacity: 0.8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .status-badge {
@@ -234,6 +248,8 @@
 
   <!-- Librería UMD de FFmpeg v0.11.6 -->
   <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  <!-- Librería para lectura de metadatos (jsmediatags) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 </head>
 <body>
 
@@ -243,6 +259,7 @@
     <div class="track-info">
       <div id="title" class="track-title">Sin archivo seleccionado</div>
       <div id="artist" class="track-artist">Carga audios locales</div>
+      <div id="album" class="track-album"></div>
     </div>
 
     <div id="status" class="status-badge"></div>
@@ -291,14 +308,20 @@
 
   <script>
     const { createFFmpeg, fetchFile } = FFmpeg;
+    const jsmediatags = window.jsmediatags;
+
+    // SVG por defecto para portadas vacías
+    const DEFAULT_COVER = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23a0a0aa' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>";
 
     // Elementos del DOM
     const audio = document.getElementById('audio');
     const btnPlay = document.getElementById('btnPlay');
     const btnPrev = document.getElementById('btnPrev');
     const btnNext = document.getElementById('btnNext');
+    const coverEl = document.getElementById('cover');
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
+    const albumEl = document.getElementById('album');
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('fileInput');
     const eqSelect = document.getElementById('eqSelect');
@@ -318,10 +341,8 @@
     let trackSource = null;
     let eqFilters = [];
 
-    // Frecuencias estándar del ecualizador (32Hz, 64Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz)
     const FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
-    // Presets en dB para cada frecuencia
     const EQ_PRESETS = {
       flat:         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       bassBoost:    [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
@@ -345,7 +366,6 @@
 
       trackSource = audioCtx.createMediaElementSource(audio);
 
-      // Crear cadena de filtros biquad
       eqFilters = FREQUENCIES.map((freq, i) => {
         const filter = audioCtx.createBiquadFilter();
         if (i === 0) {
@@ -361,7 +381,6 @@
         return filter;
       });
 
-      // Conectar nodos en serie: Fuente -> Filtro 1 -> ... -> Filtro N -> Salida
       trackSource.connect(eqFilters[0]);
       for (let i = 0; i < eqFilters.length - 1; i++) {
         eqFilters[i].connect(eqFilters[i + 1]);
@@ -380,12 +399,48 @@
 
     eqSelect.addEventListener('change', (e) => {
       if (audioCtx) {
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         applyEQ(e.target.value);
       }
     });
+
+    // --- LECTURA DE METADATOS ---
+    function readMetadata(file) {
+      return new Promise((resolve) => {
+        if (!jsmediatags) {
+          resolve(null);
+          return;
+        }
+
+        jsmediatags.read(file, {
+          onSuccess: function(tag) {
+            const tags = tag.tags;
+            let coverUrl = null;
+
+            // Extraer imagen incrustada si existe
+            if (tags.picture) {
+              const { data, format } = tags.picture;
+              let base64String = "";
+              for (let i = 0; i < data.length; i++) {
+                base64String += String.fromCharCode(data[i]);
+              }
+              coverUrl = `data:${format};base64,${window.btoa(base64String)}`;
+            }
+
+            resolve({
+              title: tags.title || null,
+              artist: tags.artist || null,
+              album: tags.album || null,
+              cover: coverUrl
+            });
+          },
+          onError: function(error) {
+            console.log("No se pudieron leer los metadatos:", error);
+            resolve(null);
+          }
+        });
+      });
+    }
 
     // --- UTILIDADES ---
     function formatTime(seconds) {
@@ -428,7 +483,7 @@
 
       playlist = files.map(file => ({
         file: file,
-        name: file.name.replace(/\.[^/.]+$/, ""),
+        filename: file.name.replace(/\.[^/.]+$/, ""),
         ext: file.name.split('.').pop().toLowerCase()
       }));
 
@@ -440,22 +495,36 @@
       if (!playlist[index]) return;
 
       const track = playlist[index];
-      titleEl.textContent = track.name;
-      artistEl.textContent = `Formato: .${track.ext.toUpperCase()}`;
       
+      // Ajustes iniciales de UI
       seekBar.value = 0;
       currentTimeEl.textContent = "00:00";
       durationEl.textContent = "00:00";
+      statusEl.textContent = "Leyendo metadatos...";
+
+      // Intentar leer las etiquetas de la pista
+      const meta = await readMetadata(track.file);
+
+      const trackTitle = (meta && meta.title) ? meta.title : track.filename;
+      const trackArtist = (meta && meta.artist) ? meta.artist : `Formato: .${track.ext.toUpperCase()}`;
+      const trackAlbum = (meta && meta.album) ? meta.album : "";
+      const trackCover = (meta && meta.cover) ? meta.cover : DEFAULT_COVER;
+
+      titleEl.textContent = trackTitle;
+      artistEl.textContent = trackArtist;
+      albumEl.textContent = trackAlbum;
+      coverEl.src = trackCover;
 
       if (currentObjectUrl) {
         URL.revokeObjectURL(currentObjectUrl);
         currentObjectUrl = null;
       }
 
+      // Reproducción según el tipo
       if (canPlayNatively(track.file)) {
         statusEl.textContent = "";
         currentObjectUrl = URL.createObjectURL(track.file);
-        startPlayback(currentObjectUrl, track.name);
+        startPlayback(currentObjectUrl, trackTitle, trackArtist, trackAlbum, trackCover);
       } else {
         try {
           statusEl.textContent = `Decodificando .${track.ext}...`;
@@ -475,7 +544,7 @@
           ff.FS('unlink', outputName);
 
           statusEl.textContent = "";
-          startPlayback(currentObjectUrl, track.name);
+          startPlayback(currentObjectUrl, trackTitle, trackArtist, trackAlbum, trackCover);
 
         } catch (error) {
           console.error("Error al procesar audio:", error);
@@ -484,7 +553,7 @@
       }
     }
 
-    function startPlayback(url, title) {
+    function startPlayback(url, title, artist, album, cover) {
       initWebAudio();
 
       if (audioCtx && audioCtx.state === 'suspended') {
@@ -492,7 +561,7 @@
       }
 
       audio.src = url;
-      updateMediaSession(title);
+      updateMediaSession(title, artist, album, cover);
 
       audio.play().then(() => {
         btnPlay.textContent = '⏸';
@@ -502,13 +571,18 @@
       });
     }
 
-    function updateMediaSession(title) {
+    // Media Session sincronizada con metadatos reales
+    function updateMediaSession(title, artist, album, cover) {
       if ('mediaSession' in navigator) {
+        const artwork = (cover && cover !== DEFAULT_COVER) 
+          ? [{ src: cover, sizes: '512x512', type: 'image/jpeg' }]
+          : [{ src: 'icon-180.png', sizes: '180x180', type: 'image/png' }];
+
         navigator.mediaSession.metadata = new MediaMetadata({
           title: title,
-          artist: 'Biblioteca Local',
-          album: 'Reproductor Multiformato',
-          artwork: [{ src: 'icon-180.png', sizes: '180x180', type: 'image/png' }]
+          artist: artist,
+          album: album || 'Biblioteca Local',
+          artwork: artwork
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
