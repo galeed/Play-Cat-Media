@@ -52,7 +52,7 @@
 
     .cover-art {
       width: 100%;
-      height: 240px;
+      height: 220px;
       background: #2a2a32;
       border-radius: 14px;
       object-fit: cover;
@@ -88,6 +88,40 @@
       font-weight: 600;
     }
 
+    /* MENÚ DESPLEGABLE DE ECUALIZADOR */
+    .eq-container {
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #2a2a34;
+      padding: 8px 14px;
+      border-radius: 10px;
+    }
+
+    .eq-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .eq-select {
+      background: transparent;
+      color: var(--accent);
+      border: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      outline: none;
+      text-align: right;
+      cursor: pointer;
+      max-width: 180px;
+    }
+
+    .eq-select option {
+      background: var(--card);
+      color: var(--text);
+    }
+
     /* BARRA DE PROGRESO Y TIEMPOS */
     .progress-container {
       width: 100%;
@@ -105,7 +139,6 @@
       cursor: pointer;
     }
 
-    /* Estilo del "botón" deslizador para Safari/Webkit */
     .seek-bar::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
@@ -121,7 +154,6 @@
       transform: scale(1.3);
     }
 
-    /* Estilo del deslizador para Firefox */
     .seek-bar::-moz-range-thumb {
       width: 14px;
       height: 14px;
@@ -215,6 +247,25 @@
 
     <div id="status" class="status-badge"></div>
 
+    <!-- Selector de Ecualizador (Estilo Apple Music) -->
+    <div class="eq-container">
+      <span class="eq-label">Ecualizador</span>
+      <select id="eqSelect" class="eq-select">
+        <option value="flat">Desactivado (Plano)</option>
+        <option value="bassBoost">Aumento de graves</option>
+        <option value="bassReducer">Reducción de graves</option>
+        <option value="electronic">Electrónica</option>
+        <option value="hiphop">Hip-Hop</option>
+        <option value="jazz">Jazz</option>
+        <option value="latin">Latina</option>
+        <option value="loudness">Loudness</option>
+        <option value="pop">Pop</option>
+        <option value="rock">Rock</option>
+        <option value="vocal">Potenciador de voz</option>
+        <option value="trebleBoost">Aumento de agudos</option>
+      </select>
+    </div>
+
     <!-- Barra de desplazamiento y tiempos -->
     <div class="progress-container">
       <input type="range" id="seekBar" class="seek-bar" value="0" min="0" max="100" step="0.1">
@@ -236,7 +287,7 @@
     </div>
   </div>
 
-  <audio id="audio"></audio>
+  <audio id="audio" crossorigin="anonymous"></audio>
 
   <script>
     const { createFFmpeg, fetchFile } = FFmpeg;
@@ -250,8 +301,8 @@
     const artistEl = document.getElementById('artist');
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('fileInput');
+    const eqSelect = document.getElementById('eqSelect');
 
-    // Elementos de la barra de control
     const seekBar = document.getElementById('seekBar');
     const currentTimeEl = document.getElementById('currentTime');
     const durationEl = document.getElementById('duration');
@@ -260,9 +311,83 @@
     let currentIndex = 0;
     let ffmpeg = null;
     let currentObjectUrl = null;
-    let isUserSeeking = false; // Previene parpadeos al arrastrar el slider
+    let isUserSeeking = false;
 
-    // Formatear segundos a 00:00
+    // --- MOTOR DE ECUALIZACIÓN (Web Audio API) ---
+    let audioCtx = null;
+    let trackSource = null;
+    let eqFilters = [];
+
+    // Frecuencias estándar del ecualizador (32Hz, 64Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz)
+    const FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+
+    // Presets en dB para cada frecuencia
+    const EQ_PRESETS = {
+      flat:         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      bassBoost:    [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
+      bassReducer:  [-6, -5, -4, -2, 0, 0, 0, 0, 0, 0],
+      electronic:   [5, 4, 2, 0, -2, 2, 1, 2, 4, 5],
+      hiphop:       [5, 4, 2, 3, -1, -1, 1, -1, 2, 3],
+      jazz:         [4, 3, 2, 2, -2, -2, 0, 1, 3, 4],
+      latin:        [4, 3, 0, 0, -2, -2, -2, 0, 3, 4],
+      loudness:     [6, 4, 0, 0, -2, 0, -1, -5, 4, 1],
+      pop:          [-2, -1, 2, 4, 5, 4, 2, -1, -2, -2],
+      rock:         [5, 4, 3, 1, -1, -1, 1, 3, 4, 5],
+      vocal:        [-2, -3, -1, 2, 5, 5, 4, 2, 0, -2],
+      trebleBoost:  [0, 0, 0, 0, 0, 1, 2, 4, 5, 6]
+    };
+
+    function initWebAudio() {
+      if (audioCtx) return;
+
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+
+      trackSource = audioCtx.createMediaElementSource(audio);
+
+      // Crear cadena de filtros biquad
+      eqFilters = FREQUENCIES.map((freq, i) => {
+        const filter = audioCtx.createBiquadFilter();
+        if (i === 0) {
+          filter.type = 'lowshelf';
+        } else if (i === FREQUENCIES.length - 1) {
+          filter.type = 'highshelf';
+        } else {
+          filter.type = 'peaking';
+          filter.Q.value = 1.4;
+        }
+        filter.frequency.value = freq;
+        filter.gain.value = 0;
+        return filter;
+      });
+
+      // Conectar nodos en serie: Fuente -> Filtro 1 -> ... -> Filtro N -> Salida
+      trackSource.connect(eqFilters[0]);
+      for (let i = 0; i < eqFilters.length - 1; i++) {
+        eqFilters[i].connect(eqFilters[i + 1]);
+      }
+      eqFilters[eqFilters.length - 1].connect(audioCtx.destination);
+    }
+
+    function applyEQ(presetName) {
+      const gains = EQ_PRESETS[presetName] || EQ_PRESETS.flat;
+      if (eqFilters.length > 0) {
+        eqFilters.forEach((filter, index) => {
+          filter.gain.setTargetAtTime(gains[index], audioCtx.currentTime, 0.05);
+        });
+      }
+    }
+
+    eqSelect.addEventListener('change', (e) => {
+      if (audioCtx) {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        applyEQ(e.target.value);
+      }
+    });
+
+    // --- UTILIDADES ---
     function formatTime(seconds) {
       if (isNaN(seconds) || seconds === Infinity) return "00:00";
       const mins = Math.floor(seconds / 60);
@@ -270,7 +395,6 @@
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    // Inicializador FFmpeg
     async function getFFmpeg() {
       if (!ffmpeg) {
         ffmpeg = createFFmpeg({ log: false });
@@ -283,7 +407,6 @@
       return ffmpeg;
     }
 
-    // Comprobación de reproducción nativa
     function canPlayNatively(file) {
       if (!file) return false;
       const ext = file.name.split('.').pop().toLowerCase();
@@ -298,7 +421,7 @@
       return false;
     }
 
-    // Evento al cargar archivos
+    // --- CARGA Y REPRODUCCIÓN ---
     fileInput.addEventListener('change', (e) => {
       const files = Array.from(e.target.files);
       if (files.length === 0) return;
@@ -313,7 +436,6 @@
       processAndPlayTrack(currentIndex);
     });
 
-    // Procesamiento y reproducción
     async function processAndPlayTrack(index) {
       if (!playlist[index]) return;
 
@@ -321,7 +443,6 @@
       titleEl.textContent = track.name;
       artistEl.textContent = `Formato: .${track.ext.toUpperCase()}`;
       
-      // Reiniciar barra de tiempo
       seekBar.value = 0;
       currentTimeEl.textContent = "00:00";
       durationEl.textContent = "00:00";
@@ -331,14 +452,11 @@
         currentObjectUrl = null;
       }
 
-      // Archivos nativos
       if (canPlayNatively(track.file)) {
         statusEl.textContent = "";
         currentObjectUrl = URL.createObjectURL(track.file);
         startPlayback(currentObjectUrl, track.name);
-      } 
-      // Archivos no nativos decodificados por WASM
-      else {
+      } else {
         try {
           statusEl.textContent = `Decodificando .${track.ext}...`;
           const ff = await getFFmpeg();
@@ -366,32 +484,35 @@
       }
     }
 
-    // Iniciar reproducción y configurar Media Session
     function startPlayback(url, title) {
+      initWebAudio();
+
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
       audio.src = url;
       updateMediaSession(title);
 
       audio.play().then(() => {
         btnPlay.textContent = '⏸';
       }).catch(err => {
-        console.log("Esperando toque del usuario para reproducir:", err);
+        console.log("Esperando interacción del usuario:", err);
         btnPlay.textContent = '▶';
       });
     }
 
-    // Media Session API
     function updateMediaSession(title) {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: title,
           artist: 'Biblioteca Local',
           album: 'Reproductor Multiformato',
-          artwork: [
-            { src: 'icon-180.png', sizes: '180x180', type: 'image/png' }
-          ]
+          artwork: [{ src: 'icon-180.png', sizes: '180x180', type: 'image/png' }]
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
           audio.play();
           btnPlay.textContent = '⏸';
         });
@@ -404,27 +525,19 @@
         navigator.mediaSession.setActionHandler('previoustrack', playPrev);
         navigator.mediaSession.setActionHandler('nexttrack', playNext);
 
-        // Posicionamiento en pantalla de bloqueo (iOS/Android)
         try {
           navigator.mediaSession.setActionHandler('seekto', (details) => {
-            if (details.seekTime) {
-              audio.currentTime = details.seekTime;
-            }
+            if (details.seekTime) audio.currentTime = details.seekTime;
           });
-        } catch (e) {
-          // Ignorar si el navegador no soporta seekto
-        }
+        } catch (e) {}
       }
     }
 
-    // LOGICA DE LA BARRA DE DESPLAZAMIENTO (SEEK BAR)
-
-    // 1. Cargar la duración cuando la pista está lista
+    // --- EVENTOS DE BARRA Y REPRODUCCIÓN ---
     audio.addEventListener('loadedmetadata', () => {
       durationEl.textContent = formatTime(audio.duration);
     });
 
-    // 2. Actualizar la barra y el tiempo actual mientras se reproduce
     audio.addEventListener('timeupdate', () => {
       if (!isUserSeeking && audio.duration) {
         const progress = (audio.currentTime / audio.duration) * 100;
@@ -433,7 +546,6 @@
       }
     });
 
-    // 3. Cuando el usuario empieza a mover el slider
     seekBar.addEventListener('input', () => {
       isUserSeeking = true;
       if (audio.duration) {
@@ -442,7 +554,6 @@
       }
     });
 
-    // 4. Cuando el usuario suelta el slider (saltar al punto seleccionado)
     seekBar.addEventListener('change', () => {
       if (audio.duration) {
         audio.currentTime = (seekBar.value / 100) * audio.duration;
@@ -450,9 +561,12 @@
       isUserSeeking = false;
     });
 
-    // Controles de interfaz
     function togglePlay() {
       if (!audio.src) return;
+
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
 
       if (audio.paused) {
         audio.play();
