@@ -52,18 +52,18 @@
 
     .cover-art {
       width: 100%;
-      height: 260px;
+      height: 240px;
       background: #2a2a32;
       border-radius: 14px;
       object-fit: cover;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
     .track-info {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .track-title {
@@ -84,8 +84,59 @@
       font-size: 0.8rem;
       color: var(--accent);
       min-height: 20px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       font-weight: 600;
+    }
+
+    /* BARRA DE PROGRESO Y TIEMPOS */
+    .progress-container {
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    .seek-bar {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: #2c2c36;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Estilo del "botón" deslizador para Safari/Webkit */
+    .seek-bar::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .seek-bar::-webkit-slider-thumb:active {
+      transform: scale(1.3);
+    }
+
+    /* Estilo del deslizador para Firefox */
+    .seek-bar::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border: none;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .time-stamps {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 6px;
     }
 
     .controls {
@@ -93,7 +144,7 @@
       align-items: center;
       justify-content: center;
       gap: 20px;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
     .btn {
@@ -122,7 +173,7 @@
     }
 
     .file-input-wrapper {
-      margin-top: 10px;
+      margin-top: 5px;
       position: relative;
     }
 
@@ -137,7 +188,6 @@
       font-weight: 500;
     }
 
-    /* Solución CSS para asegurar el toque tanto en Safari/iOS como en navegadores de escritorio */
     input[type="file"] {
       opacity: 0;
       position: absolute;
@@ -150,7 +200,7 @@
     }
   </style>
 
-  <!-- Librería UMD estable de FFmpeg (Expone la variable global window.FFmpeg) -->
+  <!-- Librería UMD de FFmpeg v0.11.6 -->
   <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 </head>
 <body>
@@ -165,6 +215,15 @@
 
     <div id="status" class="status-badge"></div>
 
+    <!-- Barra de desplazamiento y tiempos -->
+    <div class="progress-container">
+      <input type="range" id="seekBar" class="seek-bar" value="0" min="0" max="100" step="0.1">
+      <div class="time-stamps">
+        <span id="currentTime">00:00</span>
+        <span id="duration">00:00</span>
+      </div>
+    </div>
+
     <div class="controls">
       <button class="btn" id="btnPrev">⏮</button>
       <button class="btn btn-play" id="btnPlay">▶</button>
@@ -173,7 +232,6 @@
 
     <div class="file-input-wrapper">
       <span class="file-label">📁 Seleccionar archivos</span>
-      <!-- Solución para selector de archivos en iOS: extensiones explícitas -->
       <input type="file" id="fileInput" accept=".mp3, .wav, .ogg, .m4a, .flac, .aac, .wma, .opus, .aiff, audio/*" multiple>
     </div>
   </div>
@@ -181,7 +239,6 @@
   <audio id="audio"></audio>
 
   <script>
-    // 1. Extraemos las funciones de la variable global validada
     const { createFFmpeg, fetchFile } = FFmpeg;
 
     // Elementos del DOM
@@ -194,12 +251,26 @@
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('fileInput');
 
+    // Elementos de la barra de control
+    const seekBar = document.getElementById('seekBar');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationEl = document.getElementById('duration');
+
     let playlist = [];
     let currentIndex = 0;
     let ffmpeg = null;
     let currentObjectUrl = null;
+    let isUserSeeking = false; // Previene parpadeos al arrastrar el slider
 
-    // Inicializador seguro de FFmpeg
+    // Formatear segundos a 00:00
+    function formatTime(seconds) {
+      if (isNaN(seconds) || seconds === Infinity) return "00:00";
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Inicializador FFmpeg
     async function getFFmpeg() {
       if (!ffmpeg) {
         ffmpeg = createFFmpeg({ log: false });
@@ -212,11 +283,10 @@
       return ffmpeg;
     }
 
-    // Comprobación de reproducción nativa para evitar transcodificaciones innecesarias
+    // Comprobación de reproducción nativa
     function canPlayNatively(file) {
       if (!file) return false;
       const ext = file.name.split('.').pop().toLowerCase();
-      
       const nativeExtensions = ['mp3', 'wav', 'm4a', 'aac', 'flac'];
       if (nativeExtensions.includes(ext)) return true;
 
@@ -228,7 +298,7 @@
       return false;
     }
 
-    // Evento al seleccionar archivos
+    // Evento al cargar archivos
     fileInput.addEventListener('change', (e) => {
       const files = Array.from(e.target.files);
       if (files.length === 0) return;
@@ -251,19 +321,23 @@
       titleEl.textContent = track.name;
       artistEl.textContent = `Formato: .${track.ext.toUpperCase()}`;
       
-      // Liberar memoria RAM del Blob anterior
+      // Reiniciar barra de tiempo
+      seekBar.value = 0;
+      currentTimeEl.textContent = "00:00";
+      durationEl.textContent = "00:00";
+
       if (currentObjectUrl) {
         URL.revokeObjectURL(currentObjectUrl);
         currentObjectUrl = null;
       }
 
-      // VÍA A: Formatos nativos (MP3, WAV, FLAC, M4A, AAC)
+      // Archivos nativos
       if (canPlayNatively(track.file)) {
         statusEl.textContent = "";
         currentObjectUrl = URL.createObjectURL(track.file);
         startPlayback(currentObjectUrl, track.name);
       } 
-      // VÍA B: Formatos no nativos (OGG, WMA, OPUS, etc.) transcodificados con WebAssembly
+      // Archivos no nativos decodificados por WASM
       else {
         try {
           statusEl.textContent = `Decodificando .${track.ext}...`;
@@ -272,17 +346,13 @@
           const inputName = `input.${track.ext}`;
           const outputName = 'output.wav';
 
-          // Escribir archivo en la memoria virtual de WASM
           ff.FS('writeFile', inputName, await fetchFile(track.file));
-
-          // Transcodificar a PCM WAV 16-bit 44.1kHz en la memoria del navegador
           await ff.run('-i', inputName, '-acodec', 'pcm_s16le', '-ar', '44100', outputName);
 
           const data = ff.FS('readFile', outputName);
           const audioBlob = new Blob([data.buffer], { type: 'audio/wav' });
           currentObjectUrl = URL.createObjectURL(audioBlob);
 
-          // Limpiar memoria del sistema de archivos de WASM
           ff.FS('unlink', inputName);
           ff.FS('unlink', outputName);
 
@@ -296,7 +366,7 @@
       }
     }
 
-    // Iniciar reproducción y configurar la Media Session API
+    // Iniciar reproducción y configurar Media Session
     function startPlayback(url, title) {
       audio.src = url;
       updateMediaSession(title);
@@ -309,7 +379,7 @@
       });
     }
 
-    // Media Session API para pantalla de bloqueo / centro de control
+    // Media Session API
     function updateMediaSession(title) {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -333,8 +403,52 @@
 
         navigator.mediaSession.setActionHandler('previoustrack', playPrev);
         navigator.mediaSession.setActionHandler('nexttrack', playNext);
+
+        // Posicionamiento en pantalla de bloqueo (iOS/Android)
+        try {
+          navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (details.seekTime) {
+              audio.currentTime = details.seekTime;
+            }
+          });
+        } catch (e) {
+          // Ignorar si el navegador no soporta seekto
+        }
       }
     }
+
+    // LOGICA DE LA BARRA DE DESPLAZAMIENTO (SEEK BAR)
+
+    // 1. Cargar la duración cuando la pista está lista
+    audio.addEventListener('loadedmetadata', () => {
+      durationEl.textContent = formatTime(audio.duration);
+    });
+
+    // 2. Actualizar la barra y el tiempo actual mientras se reproduce
+    audio.addEventListener('timeupdate', () => {
+      if (!isUserSeeking && audio.duration) {
+        const progress = (audio.currentTime / audio.duration) * 100;
+        seekBar.value = progress;
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+      }
+    });
+
+    // 3. Cuando el usuario empieza a mover el slider
+    seekBar.addEventListener('input', () => {
+      isUserSeeking = true;
+      if (audio.duration) {
+        const seekTime = (seekBar.value / 100) * audio.duration;
+        currentTimeEl.textContent = formatTime(seekTime);
+      }
+    });
+
+    // 4. Cuando el usuario suelta el slider (saltar al punto seleccionado)
+    seekBar.addEventListener('change', () => {
+      if (audio.duration) {
+        audio.currentTime = (seekBar.value / 100) * audio.duration;
+      }
+      isUserSeeking = false;
+    });
 
     // Controles de interfaz
     function togglePlay() {
@@ -361,7 +475,6 @@
       processAndPlayTrack(currentIndex);
     }
 
-    // Event Listeners
     btnPlay.addEventListener('click', togglePlay);
     btnNext.addEventListener('click', playNext);
     btnPrev.addEventListener('click', playPrev);
