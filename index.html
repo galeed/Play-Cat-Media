@@ -137,7 +137,7 @@
       font-weight: 500;
     }
 
-    /* Solución CSS: Se evita el uso de display:none para que iOS PWA y Safari detecten el toque sin fallar */
+    /* Solución CSS para asegurar el toque tanto en Safari/iOS como en navegadores de escritorio */
     input[type="file"] {
       opacity: 0;
       position: absolute;
@@ -150,9 +150,8 @@
     }
   </style>
 
-  <!-- Carga universal de FFmpeg.wasm vía UMD CDN -->
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
-  <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/util.js"></script>
+  <!-- Librería UMD estable de FFmpeg (Expone la variable global window.FFmpeg) -->
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 </head>
 <body>
 
@@ -174,7 +173,7 @@
 
     <div class="file-input-wrapper">
       <span class="file-label">📁 Seleccionar archivos</span>
-      <!-- Solución para el selector: extensiones explícitas para evitar que la app Archivos de iOS deshabilite los formatos -->
+      <!-- Solución para selector de archivos en iOS: extensiones explícitas -->
       <input type="file" id="fileInput" accept=".mp3, .wav, .ogg, .m4a, .flac, .aac, .wma, .opus, .aiff, audio/*" multiple>
     </div>
   </div>
@@ -182,8 +181,8 @@
   <audio id="audio"></audio>
 
   <script>
-    const { FFmpeg } = FFmpegWASM;
-    const { fetchFile } = FFmpegUtil;
+    // 1. Extraemos las funciones de la variable global validada
+    const { createFFmpeg, fetchFile } = FFmpeg;
 
     // Elementos del DOM
     const audio = document.getElementById('audio');
@@ -200,38 +199,27 @@
     let ffmpeg = null;
     let currentObjectUrl = null;
 
-    // Inicialización compatible de FFmpeg con fallback dinámico
-    async function initFFmpeg() {
-      if (ffmpeg) return ffmpeg;
-      
-      statusEl.textContent = "Cargando motor WebAssembly...";
-      ffmpeg = new FFmpeg();
-
-      try {
-        await ffmpeg.load({
-          coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-          wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
-        });
-      } catch (err) {
-        console.warn("Fallo en carga estándar, reintentando modo compatible...", err);
-        // Carga alternativa para navegadores con restricciones estrictas de Worker/CORS
-        await ffmpeg.load();
+    // Inicializador seguro de FFmpeg
+    async function getFFmpeg() {
+      if (!ffmpeg) {
+        ffmpeg = createFFmpeg({ log: false });
       }
-
-      statusEl.textContent = "";
+      if (!ffmpeg.isLoaded()) {
+        statusEl.textContent = "Cargando motor WebAssembly...";
+        await ffmpeg.load();
+        statusEl.textContent = "";
+      }
       return ffmpeg;
     }
 
-    // Comprobación de compatibilidad nativa mejorada
+    // Comprobación de reproducción nativa para evitar transcodificaciones innecesarias
     function canPlayNatively(file) {
       if (!file) return false;
       const ext = file.name.split('.').pop().toLowerCase();
       
-      // Formatos que casi todos los navegadores modernos (Safari, Chrome, Firefox, Edge) reproducen nativamente
       const nativeExtensions = ['mp3', 'wav', 'm4a', 'aac', 'flac'];
       if (nativeExtensions.includes(ext)) return true;
 
-      // Verificación de tipo MIME nativo
       if (file.type) {
         const result = audio.canPlayType(file.type);
         if (result === "probably" || result === "maybe") return true;
@@ -240,7 +228,7 @@
       return false;
     }
 
-    // Escuchador de selección de archivos
+    // Evento al seleccionar archivos
     fileInput.addEventListener('change', (e) => {
       const files = Array.from(e.target.files);
       if (files.length === 0) return;
@@ -255,7 +243,7 @@
       processAndPlayTrack(currentIndex);
     });
 
-    // Procesador central de audio
+    // Procesamiento y reproducción
     async function processAndPlayTrack(index) {
       if (!playlist[index]) return;
 
@@ -263,51 +251,52 @@
       titleEl.textContent = track.name;
       artistEl.textContent = `Formato: .${track.ext.toUpperCase()}`;
       
-      // Liberar la memoria RAM del objeto previo
+      // Liberar memoria RAM del Blob anterior
       if (currentObjectUrl) {
         URL.revokeObjectURL(currentObjectUrl);
         currentObjectUrl = null;
       }
 
-      // 1. Ruta Nativa: Se ejecuta directo si el navegador lo soporta
+      // VÍA A: Formatos nativos (MP3, WAV, FLAC, M4A, AAC)
       if (canPlayNatively(track.file)) {
         statusEl.textContent = "";
         currentObjectUrl = URL.createObjectURL(track.file);
         startPlayback(currentObjectUrl, track.name);
       } 
-      // 2. Ruta WASM: Transcodifica en el cliente si el formato no es nativo (OGG, WMA, OPUS, etc.)
+      // VÍA B: Formatos no nativos (OGG, WMA, OPUS, etc.) transcodificados con WebAssembly
       else {
         try {
-          const ff = await initFFmpeg();
           statusEl.textContent = `Decodificando .${track.ext}...`;
+          const ff = await getFFmpeg();
 
-          const inputName = `input_${Date.now()}.${track.ext}`;
-          const outputName = `output_${Date.now()}.wav`;
+          const inputName = `input.${track.ext}`;
+          const outputName = 'output.wav';
 
-          await ff.writeFile(inputName, await fetchFile(track.file));
+          // Escribir archivo en la memoria virtual de WASM
+          ff.FS('writeFile', inputName, await fetchFile(track.file));
 
-          // Transcodificación universal a PCM WAV de 16 bits y 44.1kHz
-          await ff.exec(['-i', inputName, '-acodec', 'pcm_s16le', '-ar', '44100', outputName]);
+          // Transcodificar a PCM WAV 16-bit 44.1kHz en la memoria del navegador
+          await ff.run('-i', inputName, '-acodec', 'pcm_s16le', '-ar', '44100', outputName);
 
-          const data = await ff.readFile(outputName);
+          const data = ff.FS('readFile', outputName);
           const audioBlob = new Blob([data.buffer], { type: 'audio/wav' });
           currentObjectUrl = URL.createObjectURL(audioBlob);
 
-          // Limpiar la memoria virtual de FFmpeg
-          await ff.deleteFile(inputName);
-          await ff.deleteFile(outputName);
+          // Limpiar memoria del sistema de archivos de WASM
+          ff.FS('unlink', inputName);
+          ff.FS('unlink', outputName);
 
           statusEl.textContent = "";
           startPlayback(currentObjectUrl, track.name);
 
         } catch (error) {
-          console.error("Error al procesar archivo:", error);
+          console.error("Error al procesar audio:", error);
           statusEl.textContent = "Error al abrir el archivo";
         }
       }
     }
 
-    // Iniciar la reproducción y vincular la Media Session API
+    // Iniciar reproducción y configurar la Media Session API
     function startPlayback(url, title) {
       audio.src = url;
       updateMediaSession(title);
@@ -315,12 +304,12 @@
       audio.play().then(() => {
         btnPlay.textContent = '⏸';
       }).catch(err => {
-        console.log("Reproducción pausada por política del navegador:", err);
+        console.log("Esperando toque del usuario para reproducir:", err);
         btnPlay.textContent = '▶';
       });
     }
 
-    // Media Session API para iOS, Android y escritorio (Chrome/Edge/Safari)
+    // Media Session API para pantalla de bloqueo / centro de control
     function updateMediaSession(title) {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -347,7 +336,7 @@
       }
     }
 
-    // Controles de reproducción
+    // Controles de interfaz
     function togglePlay() {
       if (!audio.src) return;
 
@@ -372,7 +361,7 @@
       processAndPlayTrack(currentIndex);
     }
 
-    // Asignación de eventos
+    // Event Listeners
     btnPlay.addEventListener('click', togglePlay);
     btnNext.addEventListener('click', playNext);
     btnPrev.addEventListener('click', playPrev);
