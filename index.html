@@ -186,7 +186,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Switch de encendido / apagado */
     .switch {
       position: relative;
       display: inline-block;
@@ -378,7 +377,6 @@
       z-index: 2;
     }
 
-    /* FILA DE REPRODUCCIÓN (OVERLAY) */
     .playlist-overlay {
       position: absolute;
       top: 0;
@@ -633,64 +631,76 @@
     };
 
     function attachWebAudio() {
-      if (audioCtx) return;
+      // Solo inicializa el grafo si Dolby o EQ están activados
+      if (!dolbyToggle.checked && eqSelect.value === 'flat') {
+        return;
+      }
 
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioContext();
+      if (!audioCtx) {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AudioContext();
 
-        trackSource = audioCtx.createMediaElementSource(audio);
+          trackSource = audioCtx.createMediaElementSource(audio);
 
-        // 1. Ecualizador (10 bandas)
-        eqFilters = FREQUENCIES.map((freq, i) => {
-          const filter = audioCtx.createBiquadFilter();
-          if (i === 0) {
-            filter.type = 'lowshelf';
-          } else if (i === FREQUENCIES.length - 1) {
-            filter.type = 'highshelf';
-          } else {
-            filter.type = 'peaking';
-            filter.Q.value = 1.4;
+          // 1. Ecualizador (10 bandas)
+          eqFilters = FREQUENCIES.map((freq, i) => {
+            const filter = audioCtx.createBiquadFilter();
+            if (i === 0) {
+              filter.type = 'lowshelf';
+            } else if (i === FREQUENCIES.length - 1) {
+              filter.type = 'highshelf';
+            } else {
+              filter.type = 'peaking';
+              filter.Q.value = 1.4;
+            }
+            filter.frequency.value = freq;
+            filter.gain.value = 0;
+            return filter;
+          });
+
+          // 2. Módulo Dolby Surround
+          dolbyPanner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+          dolbyFilter = audioCtx.createBiquadFilter();
+          dolbyFilter.type = 'peaking';
+          dolbyFilter.frequency.value = 3500;
+          dolbyFilter.Q.value = 0.8;
+          dolbyFilter.gain.value = 0;
+
+          dolbyGain = audioCtx.createGain();
+          dolbyGain.gain.value = 1.0;
+
+          // Conexiones en cadena
+          trackSource.connect(eqFilters[0]);
+          for (let i = 0; i < eqFilters.length - 1; i++) {
+            eqFilters[i].connect(eqFilters[i + 1]);
           }
-          filter.frequency.value = freq;
-          filter.gain.value = 0;
-          return filter;
-        });
 
-        // 2. Módulo Dolby Surround (Simulación HRTF & M/S Expansion)
-        dolbyPanner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-        dolbyFilter = audioCtx.createBiquadFilter();
-        dolbyFilter.type = 'peaking';
-        dolbyFilter.frequency.value = 3500; // Resalte de ambiente tridimensional
-        dolbyFilter.Q.value = 0.8;
-        dolbyFilter.gain.value = 0;
+          const lastEqNode = eqFilters[eqFilters.length - 1];
+          lastEqNode.connect(dolbyFilter);
+          
+          if (dolbyPanner) {
+            dolbyFilter.connect(dolbyPanner);
+            dolbyPanner.connect(dolbyGain);
+          } else {
+            dolbyFilter.connect(dolbyGain);
+          }
 
-        dolbyGain = audioCtx.createGain();
-        dolbyGain.gain.value = 1.0;
-
-        // Conexiones en cadena
-        trackSource.connect(eqFilters[0]);
-        for (let i = 0; i < eqFilters.length - 1; i++) {
-          eqFilters[i].connect(eqFilters[i + 1]);
+          dolbyGain.connect(audioCtx.destination);
+        } catch (e) {
+          console.log("Web Audio API no soportado o bloqueado");
         }
-
-        const lastEqNode = eqFilters[eqFilters.length - 1];
-        lastEqNode.connect(dolbyFilter);
-        
-        if (dolbyPanner) {
-          dolbyFilter.connect(dolbyPanner);
-          dolbyPanner.connect(dolbyGain);
-        } else {
-          dolbyFilter.connect(dolbyGain);
-        }
-
-        dolbyGain.connect(audioCtx.destination);
-      } catch (e) {
-        console.log("AudioContext restringido");
       }
     }
 
-    // Toggle de Efecto Dolby Surround
+    // Asegurar reanudación de AudioContext cuando la app vuelve a primer plano
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    });
+
+    // Toggle Dolby
     dolbyToggle.addEventListener('change', (e) => {
       attachWebAudio();
       if (audioCtx && audioCtx.state === 'suspended') {
@@ -698,18 +708,18 @@
       }
 
       if (e.target.checked) {
-        // Modo Dolby Activado: Incrementa espacialidad y respuesta espectral
         if (dolbyFilter) dolbyFilter.gain.setTargetAtTime(4.5, audioCtx.currentTime, 0.1);
         if (dolbyGain) dolbyGain.gain.setTargetAtTime(1.15, audioCtx.currentTime, 0.1);
       } else {
-        // Modo Dolby Desactivado: Plano
         if (dolbyFilter) dolbyFilter.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
         if (dolbyGain) dolbyGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.1);
       }
     });
 
     function applyEQ(presetName) {
-      attachWebAudio();
+      if (presetName !== 'flat') {
+        attachWebAudio();
+      }
       
       const gains = EQ_PRESETS[presetName] || EQ_PRESETS.flat;
       if (eqFilters.length > 0 && audioCtx) {
@@ -888,7 +898,7 @@
     }
 
     function startPlayback(url, title, artist, album, cover) {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked) {
+      if (dolbyToggle.checked || eqSelect.value !== 'flat') {
         attachWebAudio();
       }
 
@@ -920,6 +930,9 @@
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
           audio.play();
           btnPlay.textContent = '⏸';
         });
@@ -969,6 +982,10 @@
 
     function togglePlay() {
       if (!audio.src) return;
+
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
 
       if (audio.paused) {
         audio.play();
