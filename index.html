@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Reproductor PWA Multiformato</title>
+
+  <!-- Configuraciones PWA para iOS / Safari -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e1e24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MiReproductor">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icon-180.png">
+
+  <style>
+    :root {
+      --bg: #121216;
+      --card: #1e1e24;
+      --accent: #ff4757;
+      --text: #ffffff;
+      --text-muted: #a0a0aa;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .player-card {
+      background: var(--card);
+      width: 100%;
+      max-width: 360px;
+      padding: 24px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+
+    .cover-art {
+      width: 100%;
+      height: 260px;
+      background: #2a2a32;
+      border-radius: 14px;
+      object-fit: cover;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .track-info {
+      margin-bottom: 10px;
+    }
+
+    .track-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .track-artist {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .status-badge {
+      font-size: 0.8rem;
+      color: var(--accent);
+      min-height: 20px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 10px;
+      transition: transform 0.1s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.9);
+    }
+
+    .btn-play {
+      background: var(--accent);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+
+    .file-input-wrapper {
+      margin-top: 10px;
+      position: relative;
+    }
+
+    .file-label {
+      background: #2c2c36;
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-block;
+      font-weight: 500;
+    }
+
+    /* Solución CSS: Se evita el uso de display:none para que iOS PWA y Safari detecten el toque sin fallar */
+    input[type="file"] {
+      opacity: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      z-index: 2;
+    }
+  </style>
+
+  <!-- Carga universal de FFmpeg.wasm vía UMD CDN -->
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/util.js"></script>
+</head>
+<body>
+
+  <div class="player-card">
+    <img id="cover" class="cover-art" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23a0a0aa' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>" alt="Portada">
+
+    <div class="track-info">
+      <div id="title" class="track-title">Sin archivo seleccionado</div>
+      <div id="artist" class="track-artist">Carga audios locales</div>
+    </div>
+
+    <div id="status" class="status-badge"></div>
+
+    <div class="controls">
+      <button class="btn" id="btnPrev">⏮</button>
+      <button class="btn btn-play" id="btnPlay">▶</button>
+      <button class="btn" id="btnNext">⏭</button>
+    </div>
+
+    <div class="file-input-wrapper">
+      <span class="file-label">📁 Seleccionar archivos</span>
+      <!-- Solución para el selector: extensiones explícitas para evitar que la app Archivos de iOS deshabilite los formatos -->
+      <input type="file" id="fileInput" accept=".mp3, .wav, .ogg, .m4a, .flac, .aac, .wma, .opus, .aiff, audio/*" multiple>
+    </div>
+  </div>
+
+  <audio id="audio"></audio>
+
+  <script>
+    const { FFmpeg } = FFmpegWASM;
+    const { fetchFile } = FFmpegUtil;
+
+    // Elementos del DOM
+    const audio = document.getElementById('audio');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const titleEl = document.getElementById('title');
+    const artistEl = document.getElementById('artist');
+    const statusEl = document.getElementById('status');
+    const fileInput = document.getElementById('fileInput');
+
+    let playlist = [];
+    let currentIndex = 0;
+    let ffmpeg = null;
+    let currentObjectUrl = null;
+
+    // Inicialización compatible de FFmpeg con fallback dinámico
+    async function initFFmpeg() {
+      if (ffmpeg) return ffmpeg;
+      
+      statusEl.textContent = "Cargando motor WebAssembly...";
+      ffmpeg = new FFmpeg();
+
+      try {
+        await ffmpeg.load({
+          coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+          wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
+        });
+      } catch (err) {
+        console.warn("Fallo en carga estándar, reintentando modo compatible...", err);
+        // Carga alternativa para navegadores con restricciones estrictas de Worker/CORS
+        await ffmpeg.load();
+      }
+
+      statusEl.textContent = "";
+      return ffmpeg;
+    }
+
+    // Comprobación de compatibilidad nativa mejorada
+    function canPlayNatively(file) {
+      if (!file) return false;
+      const ext = file.name.split('.').pop().toLowerCase();
+      
+      // Formatos que casi todos los navegadores modernos (Safari, Chrome, Firefox, Edge) reproducen nativamente
+      const nativeExtensions = ['mp3', 'wav', 'm4a', 'aac', 'flac'];
+      if (nativeExtensions.includes(ext)) return true;
+
+      // Verificación de tipo MIME nativo
+      if (file.type) {
+        const result = audio.canPlayType(file.type);
+        if (result === "probably" || result === "maybe") return true;
+      }
+
+      return false;
+    }
+
+    // Escuchador de selección de archivos
+    fileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+
+      playlist = files.map(file => ({
+        file: file,
+        name: file.name.replace(/\.[^/.]+$/, ""),
+        ext: file.name.split('.').pop().toLowerCase()
+      }));
+
+      currentIndex = 0;
+      processAndPlayTrack(currentIndex);
+    });
+
+    // Procesador central de audio
+    async function processAndPlayTrack(index) {
+      if (!playlist[index]) return;
+
+      const track = playlist[index];
+      titleEl.textContent = track.name;
+      artistEl.textContent = `Formato: .${track.ext.toUpperCase()}`;
+      
+      // Liberar la memoria RAM del objeto previo
+      if (currentObjectUrl) {
+        URL.revokeObjectURL(currentObjectUrl);
+        currentObjectUrl = null;
+      }
+
+      // 1. Ruta Nativa: Se ejecuta directo si el navegador lo soporta
+      if (canPlayNatively(track.file)) {
+        statusEl.textContent = "";
+        currentObjectUrl = URL.createObjectURL(track.file);
+        startPlayback(currentObjectUrl, track.name);
+      } 
+      // 2. Ruta WASM: Transcodifica en el cliente si el formato no es nativo (OGG, WMA, OPUS, etc.)
+      else {
+        try {
+          const ff = await initFFmpeg();
+          statusEl.textContent = `Decodificando .${track.ext}...`;
+
+          const inputName = `input_${Date.now()}.${track.ext}`;
+          const outputName = `output_${Date.now()}.wav`;
+
+          await ff.writeFile(inputName, await fetchFile(track.file));
+
+          // Transcodificación universal a PCM WAV de 16 bits y 44.1kHz
+          await ff.exec(['-i', inputName, '-acodec', 'pcm_s16le', '-ar', '44100', outputName]);
+
+          const data = await ff.readFile(outputName);
+          const audioBlob = new Blob([data.buffer], { type: 'audio/wav' });
+          currentObjectUrl = URL.createObjectURL(audioBlob);
+
+          // Limpiar la memoria virtual de FFmpeg
+          await ff.deleteFile(inputName);
+          await ff.deleteFile(outputName);
+
+          statusEl.textContent = "";
+          startPlayback(currentObjectUrl, track.name);
+
+        } catch (error) {
+          console.error("Error al procesar archivo:", error);
+          statusEl.textContent = "Error al abrir el archivo";
+        }
+      }
+    }
+
+    // Iniciar la reproducción y vincular la Media Session API
+    function startPlayback(url, title) {
+      audio.src = url;
+      updateMediaSession(title);
+
+      audio.play().then(() => {
+        btnPlay.textContent = '⏸';
+      }).catch(err => {
+        console.log("Reproducción pausada por política del navegador:", err);
+        btnPlay.textContent = '▶';
+      });
+    }
+
+    // Media Session API para iOS, Android y escritorio (Chrome/Edge/Safari)
+    function updateMediaSession(title) {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: title,
+          artist: 'Biblioteca Local',
+          album: 'Reproductor Multiformato',
+          artwork: [
+            { src: 'icon-180.png', sizes: '180x180', type: 'image/png' }
+          ]
+        });
+
+        navigator.mediaSession.setActionHandler('play', () => {
+          audio.play();
+          btnPlay.textContent = '⏸';
+        });
+
+        navigator.mediaSession.setActionHandler('pause', () => {
+          audio.pause();
+          btnPlay.textContent = '▶';
+        });
+
+        navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+        navigator.mediaSession.setActionHandler('nexttrack', playNext);
+      }
+    }
+
+    // Controles de reproducción
+    function togglePlay() {
+      if (!audio.src) return;
+
+      if (audio.paused) {
+        audio.play();
+        btnPlay.textContent = '⏸';
+      } else {
+        audio.pause();
+        btnPlay.textContent = '▶';
+      }
+    }
+
+    function playNext() {
+      if (playlist.length === 0) return;
+      currentIndex = (currentIndex + 1) % playlist.length;
+      processAndPlayTrack(currentIndex);
+    }
+
+    function playPrev() {
+      if (playlist.length === 0) return;
+      currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+      processAndPlayTrack(currentIndex);
+    }
+
+    // Asignación de eventos
+    btnPlay.addEventListener('click', togglePlay);
+    btnNext.addEventListener('click', playNext);
+    btnPrev.addEventListener('click', playPrev);
+    audio.addEventListener('ended', playNext);
+  </script>
+</body>
+</html>
