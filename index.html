@@ -264,10 +264,6 @@
       transition: transform 0.1s ease;
     }
 
-    .seek-bar::-webkit-slider-thumb:active {
-      transform: scale(1.3);
-    }
-
     .time-stamps {
       display: flex;
       justify-content: space-between;
@@ -292,7 +288,6 @@
       cursor: pointer;
       padding: 8px;
       transition: transform 0.1s ease;
-      text-shadow: 0 2px 5px rgba(0,0,0,0.3);
     }
 
     .btn:active {
@@ -310,7 +305,6 @@
       justify-content: center;
       font-size: 1.8rem;
       box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-      text-shadow: none;
     }
 
     .btn-sub {
@@ -324,38 +318,41 @@
       color: var(--accent);
     }
 
+    /* --- BOTÓN DE CARGA REFACTORIZADO --- */
     .file-input-wrapper {
       margin-top: 5px;
       position: relative;
-    }
-
-    .file-label {
+      display: block;
+      width: 100%;
+      height: 46px;
+      border-radius: 14px;
+      overflow: hidden;
       background: rgba(255, 255, 255, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.3);
-      color: var(--text);
-      padding: 12px 20px;
-      border-radius: 14px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      display: inline-block;
-      font-weight: 600;
       backdrop-filter: blur(10px);
-      transition: background 0.2s;
     }
 
-    .file-label:hover {
-      background: rgba(255, 255, 255, 0.3);
+    .file-input-btn {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      pointer-events: none; /* Deja pasar los clics al input de abajo */
     }
 
-    input[type="file"] {
-      opacity: 0;
+    .real-file-input {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
+      opacity: 0.001; /* Casi invisible pero 100% interactivo para el navegador */
       cursor: pointer;
-      z-index: 2;
+      z-index: 5;
     }
 
     .playlist-overlay {
@@ -411,7 +408,6 @@
       align-items: center;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: background 0.2s;
     }
 
     .playlist-item.playing {
@@ -493,9 +489,10 @@
       <button class="btn btn-sub" id="btnRepeat">🔁</button>
     </div>
 
+    <!-- Contenedor de Carga Corregido -->
     <div class="file-input-wrapper">
-      <label class="file-label" for="fileInput">📁 Cargar canciones</label>
-      <input type="file" id="fileInput" multiple accept="audio/*">
+      <div class="file-input-btn">📁 Cargar canciones</div>
+      <input type="file" id="fileInput" class="real-file-input" multiple accept=".mp3,.wav,.ogg,.flac,.m4a,.aac,audio/*">
     </div>
 
     <div class="playlist-overlay" id="playlistOverlay">
@@ -510,7 +507,6 @@
   <audio id="audio" preload="metadata" playsinline></audio>
 
   <script>
-    const jsmediatags = window.jsmediatags;
     const DEFAULT_COVER = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>";
 
     const audio = document.getElementById('audio');
@@ -547,7 +543,7 @@
     let isShuffle = false;
     let repeatMode = 'off';
 
-    // --- WEBAUDIO OPTIMIZADO PARA MÓVILES ---
+    // --- WEBAUDIO ENGINE ---
     let audioCtx = null;
     let trackSource = null;
     let eqFilters = [];
@@ -599,7 +595,7 @@
           dolbyFilter.connect(dolbyGain);
           dolbyGain.connect(audioCtx.destination);
         } catch (e) {
-          console.warn("Web Audio API no soportado completamente en este entorno.");
+          console.warn("WebAudio no inicializado");
         }
       }
     }
@@ -630,12 +626,6 @@
 
     eqSelect.addEventListener('change', updateAudioEffects);
     dolbyToggle.addEventListener('change', updateAudioEffects);
-
-    audio.addEventListener('play', () => {
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    });
 
     btnToggleQueue.addEventListener('click', () => playlistOverlay.classList.add('active'));
     btnCloseQueue.addEventListener('click', () => playlistOverlay.classList.remove('active'));
@@ -689,13 +679,13 @@
 
     function readMetadata(file) {
       return new Promise((resolve) => {
-        if (!jsmediatags) {
+        if (!window.jsmediatags) {
           resolve(null);
           return;
         }
 
         try {
-          jsmediatags.read(file, {
+          window.jsmediatags.read(file, {
             onSuccess: function(tag) {
               const tags = tag.tags;
               let coverUrl = null;
@@ -733,35 +723,41 @@
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
+    // LISTENER DE ARCHIVOS MANEJADO SAFELY
     fileInput.addEventListener('change', async (e) => {
-      const files = Array.from(e.target.files);
+      const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
 
-      statusEl.textContent = "Procesando...";
+      statusEl.textContent = "Cargando archivos...";
 
-      const newTracks = await Promise.all(files.map(async (file) => {
-        const ext = file.name.split('.').pop().toLowerCase();
-        const filename = file.name.replace(/\.[^/.]+$/, "");
-        const meta = await readMetadata(file);
+      try {
+        const newTracks = await Promise.all(files.map(async (file) => {
+          const ext = file.name.split('.').pop().toLowerCase();
+          const filename = file.name.replace(/\.[^/.]+$/, "");
+          const meta = await readMetadata(file);
 
-        return {
-          file,
-          filename,
-          ext,
-          title: meta?.title || filename,
-          artist: meta?.artist || `Audio .${ext.toUpperCase()}`,
-          album: meta?.album || "",
-          cover: meta?.cover || DEFAULT_COVER
-        };
-      }));
+          return {
+            file,
+            filename,
+            ext,
+            title: meta?.title || filename,
+            artist: meta?.artist || `Audio .${ext.toUpperCase()}`,
+            album: meta?.album || "",
+            cover: meta?.cover || DEFAULT_COVER
+          };
+        }));
 
-      playlist = [...playlist, ...newTracks];
-      statusEl.textContent = "";
-      renderPlaylistUI();
+        playlist = [...playlist, ...newTracks];
+        statusEl.textContent = "";
+        renderPlaylistUI();
 
-      if (playlist.length === newTracks.length) {
-        currentIndex = 0;
-        processAndPlayTrack(currentIndex);
+        if (playlist.length === newTracks.length) {
+          currentIndex = 0;
+          processAndPlayTrack(currentIndex);
+        }
+      } catch (err) {
+        statusEl.textContent = "Error al leer archivos";
+        console.error(err);
       }
     });
 
@@ -807,54 +803,15 @@
       }
 
       audio.src = url;
-      updateMediaSession(title, artist, album, cover);
 
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.then(() => {
           btnPlay.textContent = '⏸';
-          if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = "playing";
-          }
         }).catch(err => {
-          console.warn("Autoplay prevenido por el navegador:", err);
+          console.warn("Reproducción diferida por políticas del navegador:", err);
           btnPlay.textContent = '▶';
         });
-      }
-    }
-
-    function updateMediaSession(title, artist, album, cover) {
-      if ('mediaSession' in navigator) {
-        const artwork = (cover && cover !== DEFAULT_COVER) 
-          ? [{ src: cover, sizes: '512x512', type: 'image/jpeg' }]
-          : [];
-
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: title,
-          artist: artist,
-          album: album || 'Biblioteca Local',
-          artwork: artwork
-        });
-
-        navigator.mediaSession.setActionHandler('play', () => {
-          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-          audio.play();
-          btnPlay.textContent = '⏸';
-        });
-
-        navigator.mediaSession.setActionHandler('pause', () => {
-          audio.pause();
-          btnPlay.textContent = '▶';
-        });
-
-        navigator.mediaSession.setActionHandler('previoustrack', playPrev);
-        navigator.mediaSession.setActionHandler('nexttrack', playNext);
-
-        try {
-          navigator.mediaSession.setActionHandler('seekto', (details) => {
-            if (details.seekTime) audio.currentTime = details.seekTime;
-          });
-        } catch (e) {}
       }
     }
 
@@ -951,10 +908,6 @@
     btnPrev.addEventListener('click', playPrev);
 
     audio.addEventListener('ended', () => {
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-
       if (repeatMode === 'one') {
         audio.currentTime = 0;
         audio.play().catch(console.warn);
