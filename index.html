@@ -261,7 +261,6 @@
       background: var(--text);
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
       cursor: pointer;
-      transition: transform 0.1s ease;
     }
 
     .time-stamps {
@@ -318,7 +317,6 @@
       color: var(--accent);
     }
 
-    /* --- BOTÓN DE CARGA REFACTORIZADO --- */
     .file-input-wrapper {
       margin-top: 5px;
       position: relative;
@@ -341,7 +339,7 @@
       color: var(--text);
       font-size: 0.9rem;
       font-weight: 600;
-      pointer-events: none; /* Deja pasar los clics al input de abajo */
+      pointer-events: none;
     }
 
     .real-file-input {
@@ -350,7 +348,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      opacity: 0.001; /* Casi invisible pero 100% interactivo para el navegador */
+      opacity: 0.001;
       cursor: pointer;
       z-index: 5;
     }
@@ -489,7 +487,6 @@
       <button class="btn btn-sub" id="btnRepeat">🔁</button>
     </div>
 
-    <!-- Contenedor de Carga Corregido -->
     <div class="file-input-wrapper">
       <div class="file-input-btn">📁 Cargar canciones</div>
       <input type="file" id="fileInput" class="real-file-input" multiple accept=".mp3,.wav,.ogg,.flac,.m4a,.aac,audio/*">
@@ -504,7 +501,7 @@
     </div>
   </div>
 
-  <audio id="audio" preload="metadata" playsinline></audio>
+  <audio id="audio" preload="auto" playsinline></audio>
 
   <script>
     const DEFAULT_COVER = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>";
@@ -538,6 +535,7 @@
     let playlist = [];
     let currentIndex = 0;
     let currentObjectUrl = null;
+    let currentCoverObjectUrl = null;
     let isUserSeeking = false;
 
     let isShuffle = false;
@@ -561,7 +559,7 @@
       rock:         [5, 4, 3, 1, -1, -1, 1, 3, 4, 5]
     };
 
-    function attachWebAudio() {
+    function initWebAudio() {
       if (!audioCtx) {
         try {
           const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
@@ -595,14 +593,14 @@
           dolbyFilter.connect(dolbyGain);
           dolbyGain.connect(audioCtx.destination);
         } catch (e) {
-          console.warn("WebAudio no inicializado");
+          console.warn("WebAudio no disponible");
         }
       }
     }
 
     function updateAudioEffects() {
       if (eqSelect.value !== 'flat' || dolbyToggle.checked) {
-        attachWebAudio();
+        initWebAudio();
         if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
@@ -677,6 +675,27 @@
       }
     });
 
+    // Convierte Base64/ArrayBuffer a Blob URL compatible con iOS Lockscreen
+    function createCoverBlobUrl(coverData) {
+      if (!coverData) return DEFAULT_COVER;
+      if (coverData.startsWith('data:')) {
+        try {
+          const parts = coverData.split(';base64,');
+          const contentType = parts[0].split(':')[1];
+          const raw = window.atob(parts[1]);
+          const uInt8Array = new Uint8Array(raw.length);
+          for (let i = 0; i < raw.length; ++i) {
+            uInt8Array[i] = raw.charCodeAt(i);
+          }
+          const blob = new Blob([uInt8Array], { type: contentType });
+          return URL.createObjectURL(blob);
+        } catch (e) {
+          return DEFAULT_COVER;
+        }
+      }
+      return coverData;
+    }
+
     function readMetadata(file) {
       return new Promise((resolve) => {
         if (!window.jsmediatags) {
@@ -696,7 +715,8 @@
                 for (let i = 0; i < data.length; i++) {
                   base64String += String.fromCharCode(data[i]);
                 }
-                coverUrl = `data:${format};base64,${window.btoa(base64String)}`;
+                const dataUri = `data:${format};base64,${window.btoa(base64String)}`;
+                coverUrl = createCoverBlobUrl(dataUri);
               }
 
               resolve({
@@ -723,12 +743,11 @@
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    // LISTENER DE ARCHIVOS MANEJADO SAFELY
     fileInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
 
-      statusEl.textContent = "Cargando archivos...";
+      statusEl.textContent = "Cargando...";
 
       try {
         const newTracks = await Promise.all(files.map(async (file) => {
@@ -741,7 +760,7 @@
             filename,
             ext,
             title: meta?.title || filename,
-            artist: meta?.artist || `Audio .${ext.toUpperCase()}`,
+            artist: meta?.artist || "Biblioteca Local",
             album: meta?.album || "",
             cover: meta?.cover || DEFAULT_COVER
           };
@@ -757,7 +776,6 @@
         }
       } catch (err) {
         statusEl.textContent = "Error al leer archivos";
-        console.error(err);
       }
     });
 
@@ -795,7 +813,7 @@
 
     function startPlayback(url, title, artist, album, cover) {
       if (eqSelect.value !== 'flat' || dolbyToggle.checked) {
-        attachWebAudio();
+        initWebAudio();
       }
 
       if (audioCtx && audioCtx.state === 'suspended') {
@@ -803,20 +821,71 @@
       }
 
       audio.src = url;
+      setupMediaSession(title, artist, album, cover);
 
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
+      audio.play().then(() => {
+        btnPlay.textContent = '⏸';
+        updatePositionState();
+      }).catch(err => {
+        console.warn("Reproducción en espera:", err);
+        btnPlay.textContent = '▶';
+      });
+    }
+
+    // --- INTEGRACIÓN COMPLETA DE MEDIASESSION PARA PANTALLA DE BLOQUEO DE iOS ---
+    function setupMediaSession(title, artist, album, cover) {
+      if ('mediaSession' in navigator) {
+        const artwork = (cover && cover !== DEFAULT_COVER)
+          ? [{ src: cover, sizes: '512x512', type: 'image/png' }]
+          : [];
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: title || 'Canción',
+          artist: artist || 'Artista',
+          album: album || 'Biblioteca',
+          artwork: artwork
+        });
+
+        navigator.mediaSession.setActionHandler('play', () => {
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+          audio.play();
           btnPlay.textContent = '⏸';
-        }).catch(err => {
-          console.warn("Reproducción diferida por políticas del navegador:", err);
+        });
+
+        navigator.mediaSession.setActionHandler('pause', () => {
+          audio.pause();
           btnPlay.textContent = '▶';
         });
+
+        navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+        navigator.mediaSession.setActionHandler('nexttrack', playNext);
+
+        try {
+          navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (details.seekTime !== undefined) {
+              audio.currentTime = details.seekTime;
+              updatePositionState();
+            }
+          });
+        } catch (e) {}
+      }
+    }
+
+    function updatePositionState() {
+      if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+        if (audio.duration && !isNaN(audio.duration)) {
+          navigator.mediaSession.setPositionState({
+            duration: audio.duration,
+            playbackRate: audio.playbackRate,
+            position: audio.currentTime
+          });
+        }
       }
     }
 
     audio.addEventListener('loadedmetadata', () => {
       durationEl.textContent = formatTime(audio.duration);
+      updatePositionState();
     });
 
     audio.addEventListener('timeupdate', () => {
@@ -838,6 +907,7 @@
     seekBar.addEventListener('change', () => {
       if (audio.duration) {
         audio.currentTime = (seekBar.value / 100) * audio.duration;
+        updatePositionState();
       }
       isUserSeeking = false;
     });
@@ -891,6 +961,7 @@
 
       if (audio.currentTime > 3) {
         audio.currentTime = 0;
+        updatePositionState();
         return;
       }
 
