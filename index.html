@@ -490,7 +490,6 @@
       <div class="track-album" id="album"></div>
     </div>
 
-    <!-- Insignia Hi-Res Spec (Corregida con decodificación real de muestras y headers) -->
     <div class="audio-specs-badge" id="audioSpecs"></div>
 
     <div class="status-badge" id="status"></div>
@@ -781,68 +780,85 @@
       });
     }
 
-    /* ---- EXTRACTORES NATIVOS TÉCNICOS (Sample Rate & Bit Depth) ---- */
-    async function extractAudioSpecs(file) {
+    /* ---- PARSEADOR DE METADATOS BINARIOS EXACTOS ---- */
+    async function parseBinaryAudioSpecs(file) {
       const ext = file.name.split('.').pop().toLowerCase();
-      let realSampleRate = null;
-      let realBitDepth = null;
+      
+      // Leemos los primeros 2 MB para asegurar capturar headers grandes o con ID3v2 tags
+      const buffer = await file.slice(0, 2048 * 1024).arrayBuffer();
+      const uint8 = new Uint8Array(buffer);
+      const view = new DataView(buffer);
 
-      try {
-        // Decodificación directa del buffer original para la frecuencia nativa REAL (evita limitación de hardware)
-        const arrayBuffer = await file.slice(0, 512 * 1024).arrayBuffer(); // Lee primeros 512KB para análisis rápido
-        const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 44100, 44100);
-        
+      let sampleRate = null;
+      let bitDepth = null;
+
+      if (ext === 'flac') {
+        // Buscar firma 'fLaC' (0x66 0x4C 0x61 0x43)
+        let flacPos = -1;
+        for (let i = 0; i < uint8.length - 4; i++) {
+          if (uint8[i] === 0x66 && uint8[i+1] === 0x4C && uint8[i+2] === 0x61 && uint8[i+3] === 0x43) {
+            flacPos = i;
+            break;
+          }
+        }
+
+        if (flacPos !== -1 && buffer.byteLength >= flacPos + 22) {
+          // STREAMINFO está inmediatamente después de 'fLaC' (4 bytes) + Header de Bloque (4 bytes) = +8 bytes
+          const streamInfoPos = flacPos + 8;
+          
+          // Frecuencia de muestreo: 20 bits almacenados en los bytes 10, 11 y la mitad de 12 (relativos a STREAMINFO)
+          const b10 = uint8[streamInfoPos + 10];
+          const b11 = uint8[streamInfoPos + 11];
+          const b12 = uint8[streamInfoPos + 12];
+          sampleRate = (b10 << 12) | (b11 << 4) | (b12 >> 4);
+
+          // Bits por muestra: 5 bits compartidos entre los bytes 12 y 13
+          const b13 = uint8[streamInfoPos + 13];
+          const rawBits = (((b12 & 0x01) << 4) | (b13 >> 4)) + 1;
+          if (rawBits > 1 && rawBits <= 32) {
+            bitDepth = `${rawBits} bit`;
+          }
+        }
+      } else if (ext === 'wav') {
+        // Buscar sub-chunk 'fmt ' (0x66 0x6D 0x74 0x20)
+        let fmtPos = -1;
+        for (let i = 0; i < uint8.length - 4; i++) {
+          if (uint8[i] === 0x66 && uint8[i+1] === 0x6D && uint8[i+2] === 0x74 && uint8[i+3] === 0x20) {
+            fmtPos = i;
+            break;
+          }
+        }
+
+        if (fmtPos !== -1 && buffer.byteLength >= fmtPos + 16) {
+          sampleRate = view.getUint32(fmtPos + 12, true);
+          const bits = view.getUint16(fmtPos + 22, true);
+          if (bits > 0) bitDepth = `${bits} bit`;
+        }
+      }
+
+      // Decodificación directa del AudioBuffer sin resampling del sistema si no se leyó vía binario
+      if (!sampleRate) {
         try {
-          const decoded = await offlineCtx.decodeAudioData(arrayBuffer.slice(0));
+          const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 48000);
+          const decoded = await offlineCtx.decodeAudioData(buffer.slice(0));
           if (decoded && decoded.sampleRate) {
-            realSampleRate = decoded.sampleRate;
+            sampleRate = decoded.sampleRate;
           }
         } catch (e) {
-          // Si falla lectura parcial, continuar a inspección de encabezado
-        }
-
-        // Inspección profunda de Bytes para Bit Depth real según contenedor
-        const view = new DataView(arrayBuffer);
-
-        if (ext === 'wav' && arrayBuffer.byteLength > 36) {
-          // Parsear encabezado RIFF/WAV
-          const bitsPerSample = view.getUint16(34, true);
-          if (bitsPerSample) realBitDepth = `${bitsPerSample} bit`;
-          if (!realSampleRate) realSampleRate = view.getUint32(24, true);
-        } else if (ext === 'flac' && arrayBuffer.byteLength > 18) {
-          // Parsear STREAMINFO de FLAC
-          // Frecuencia: 20 bits desde offset 18
-          // Bit Depth: 5 bits desde offset 20
-          const b18 = view.getUint8(18);
-          const b19 = view.getUint8(19);
-          const b20 = view.getUint8(20);
-          
-          if (!realSampleRate) {
-            realSampleRate = (b18 << 12) | (b19 << 4) | (b20 >> 4);
-          }
-          const bits = (((b20 & 0x0E) >> 1) + 1);
-          if (bits > 1) realBitDepth = `${bits} bit`;
-        }
-      } catch (err) {
-        console.warn("Análisis de encabezado diferido:", err);
-      }
-
-      // Valores de respaldo inteligentes si el archivo no expone metadata sin comprimir
-      if (!realSampleRate) realSampleRate = 44100;
-
-      if (!realBitDepth) {
-        if (ext === 'flac' || ext === 'wav') {
-          realBitDepth = "24 bit";
-        } else {
-          // Formatos con pérdida (MP3, AAC, OGG) no tienen bit depth estático
-          realBitDepth = "16 bit"; 
+          // Ignorar si el formato no es compatible nativamente con decodeAudioData
         }
       }
 
-      const sampleRateKhz = (realSampleRate / 1000).toFixed(realSampleRate % 1000 === 0 ? 0 : 1);
+      // Valores predeterminados en caso de formatos con pérdida o fallback
+      if (!sampleRate) sampleRate = 44100;
+      if (!bitDepth) {
+        bitDepth = (ext === 'flac' || ext === 'wav') ? "24 bit" : "16 bit";
+      }
+
+      const sampleRateKhz = (sampleRate / 1000).toFixed(sampleRate % 1000 === 0 ? 0 : 1);
       const format = ext.toUpperCase();
 
-      return `${format} | ${realBitDepth} | ${sampleRateKhz} kHz |`;
+      return `${format} | ${bitDepth} | ${sampleRateKhz} kHz |`;
     }
 
     function formatTime(seconds) {
@@ -863,9 +879,8 @@
           const ext = file.name.split('.').pop().toLowerCase();
           const filename = file.name.replace(/\.[^/.]+$/, "");
           
-          // Ejecutamos la lectura técnica paralela
           const metaPromise = readMetadata(file);
-          const specsPromise = extractAudioSpecs(file);
+          const specsPromise = parseBinaryAudioSpecs(file);
 
           const [meta, specsText] = await Promise.all([metaPromise, specsPromise]);
 
@@ -915,7 +930,6 @@
         bgBlur.style.backgroundImage = 'none';
       }
 
-      // Mostramos las especificaciones exactas procesadas
       audioSpecsEl.textContent = track.specs || `${track.ext.toUpperCase()} | 16 bit | 44.1 kHz |`;
       renderPlaylistUI();
 
