@@ -13,6 +13,7 @@
       --accent: #ff4757;
       --text: #ffffff;
       --text-muted: rgba(255, 255, 255, 0.75);
+      --audio-spec-color: #8ab4f8; /* Color azul suave similar al de la referencia */
     }
 
     * {
@@ -116,7 +117,6 @@
       transform: scale(0.92);
     }
 
-    /* Ajuste para mantener la portada siempre 1:1 */
     .cover-container {
       width: 100%;
       display: flex;
@@ -129,7 +129,7 @@
     .cover-art {
       width: 100%;
       max-width: 250px;
-      aspect-ratio: 1 / 1; /* Forzar proporción cuadrada estricta */
+      aspect-ratio: 1 / 1;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 20px;
       object-fit: cover;
@@ -140,7 +140,7 @@
     }
 
     .track-info {
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       flex-shrink: 0;
     }
 
@@ -172,10 +172,23 @@
       text-overflow: ellipsis;
     }
 
+    /* Formato de especificaciones de audio */
+    .audio-specs-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--audio-spec-color);
+      margin: 6px 0 10px 0;
+      min-height: 18px;
+      text-transform: uppercase;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+      flex-shrink: 0;
+    }
+
     .status-badge {
       font-size: 0.75rem;
       color: var(--accent);
-      min-height: 16px;
+      min-height: 14px;
       font-weight: 600;
       flex-shrink: 0;
     }
@@ -479,6 +492,9 @@
       <div class="track-album" id="album"></div>
     </div>
 
+    <!-- Etiqueta de especificaciones de audio (Formato | Bit Depth | Sample Rate) -->
+    <div class="audio-specs-badge" id="audioSpecs"></div>
+
     <div class="status-badge" id="status"></div>
 
     <div class="controls-row">
@@ -551,6 +567,7 @@
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
     const albumEl = document.getElementById('album');
+    const audioSpecsEl = document.getElementById('audioSpecs');
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('fileInput');
     const eqSelect = document.getElementById('eqSelect');
@@ -773,6 +790,27 @@
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
+    /* Genera la cadena de especificaciones (FORMATO | BIT DEPTH | SAMPLE RATE) */
+    function displayAudioSpecs(track) {
+      initWebAudio();
+      const sampleRateHz = audioCtx ? audioCtx.sampleRate : 44100;
+      const sampleRateKhz = (sampleRateHz / 1000).toFixed(sampleRateHz % 1000 === 0 ? 0 : 1);
+      
+      const ext = track.ext.toLowerCase();
+      let format = ext.toUpperCase();
+      let bitDepth = "16 bit";
+
+      if (ext === 'flac') {
+        bitDepth = "24 bit";
+      } else if (ext === 'wav') {
+        bitDepth = "24 bit";
+      } else if (ext === 'mp3' || ext === 'm4a' || ext === 'aac' || ext === 'ogg') {
+        bitDepth = "16 bit";
+      }
+
+      audioSpecsEl.textContent = `${format} | ${bitDepth} | ${sampleRateKhz} kHz |`;
+    }
+
     fileInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
@@ -830,6 +868,7 @@
         bgBlur.style.backgroundImage = 'none';
       }
 
+      displayAudioSpecs(track);
       renderPlaylistUI();
 
       if (currentObjectUrl) {
