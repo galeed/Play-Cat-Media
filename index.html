@@ -566,7 +566,7 @@
 
   <audio id="audio" crossorigin="anonymous" playsinline preload="auto"></audio>
 
-  <script>
+    <script>
     const { createFFmpeg, fetchFile } = FFmpeg;
     const jsmediatags = window.jsmediatags;
 
@@ -607,6 +607,101 @@
     // ESTADOS REPRODUCCIÓN
     let isShuffle = false;
     let repeatMode = 'off'; // 'off', 'all', 'one'
+
+    // --- PROCESADOR WEB AUDIO (DOLBY SURROUND + EQ) ---
+    let audioCtx = null;
+    let trackSource = null;
+    let eqFilters = [];
+    let dolbyPanner = null;
+    let dolbyFilter = null;
+    let dolbyGain = null;
+
+    const FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+
+    const EQ_PRESETS = {
+      flat:         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      bassBoost:    [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
+      bassReducer:  [-6, -5, -4, -2, 0, 0, 0, 0, 0, 0],
+      electronic:   [5, 4, 2, 0, -2, 2, 1, 2, 4, 5],
+      hiphop:       [5, 4, 2, 3, -1, -1, 1, -1, 2, 3],
+      jazz:         [4, 3, 2, 2, -2, -2, 0, 1, 3, 4],
+      latin:        [4, 3, 0, 0, -2, -2, -2, 0, 3, 4],
+      loudness:     [6, 4, 0, 0, -2, 0, -1, -5, 4, 1],
+      pop:          [-2, -1, 2, 4, 5, 4, 2, -1, -2, -2],
+      rock:         [5, 4, 3, 1, -1, -1, 1, 3, 4, 5],
+      vocal:        [-2, -3, -1, 2, 5, 5, 4, 2, 0, -2],
+      trebleBoost:  [0, 0, 0, 0, 0, 1, 2, 4, 5, 6]
+    };
+
+    function attachWebAudio() {
+      if (!audioCtx) {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AudioContext();
+
+          trackSource = audioCtx.createMediaElementSource(audio);
+
+          eqFilters = FREQUENCIES.map((freq, i) => {
+            const filter = audioCtx.createBiquadFilter();
+            if (i === 0) {
+              filter.type = 'lowshelf';
+            } else if (i === FREQUENCIES.length - 1) {
+              filter.type = 'highshelf';
+            } else {
+              filter.type = 'peaking';
+              filter.Q.value = 1.4;
+            }
+            filter.frequency.value = freq;
+            filter.gain.value = 0;
+            return filter;
+          });
+
+          dolbyPanner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+          dolbyFilter = audioCtx.createBiquadFilter();
+          dolbyFilter.type = 'peaking';
+          dolbyFilter.frequency.value = 3500;
+          dolbyFilter.Q.value = 0.8;
+          dolbyFilter.gain.value = 0;
+
+          dolbyGain = audioCtx.createGain();
+          dolbyGain.gain.value = 1.0;
+
+          trackSource.connect(eqFilters[0]);
+          for (let i = 0; i < eqFilters.length - 1; i++) {
+            eqFilters[i].connect(eqFilters[i + 1]);
+          }
+
+          const lastEqNode = eqFilters[eqFilters.length - 1];
+          lastEqNode.connect(dolbyFilter);
+          
+          if (dolbyPanner) {
+            dolbyFilter.connect(dolbyPanner);
+            dolbyPanner.connect(dolbyGain);
+          } else {
+            dolbyFilter.connect(dolbyGain);
+          }
+
+          dolbyGain.connect(audioCtx.destination);
+        } catch (e) {
+          console.log("Web Audio API no iniciado o ya configurado");
+        }
+      }
+    }
+
+    // EVENTOS NATIVOS DE AUDIO PARA ASEGURAR SEGUNDO PLANO EN iOS
+    audio.addEventListener('play', () => {
+      if (audioCtx) {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    });
 
     btnShuffle.addEventListener('click', () => {
       isShuffle = !isShuffle;
@@ -659,97 +754,6 @@
       });
     }
 
-    // --- PROCESADOR WEB AUDIO (DOLBY SURROUND + EQ) ---
-    let audioCtx = null;
-    let trackSource = null;
-    let eqFilters = [];
-    let dolbyPanner = null;
-    let dolbyFilter = null;
-    let dolbyGain = null;
-
-    const FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-
-    const EQ_PRESETS = {
-      flat:         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      bassBoost:    [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
-      bassReducer:  [-6, -5, -4, -2, 0, 0, 0, 0, 0, 0],
-      electronic:   [5, 4, 2, 0, -2, 2, 1, 2, 4, 5],
-      hiphop:       [5, 4, 2, 3, -1, -1, 1, -1, 2, 3],
-      jazz:         [4, 3, 2, 2, -2, -2, 0, 1, 3, 4],
-      latin:        [4, 3, 0, 0, -2, -2, -2, 0, 3, 4],
-      loudness:     [6, 4, 0, 0, -2, 0, -1, -5, 4, 1],
-      pop:          [-2, -1, 2, 4, 5, 4, 2, -1, -2, -2],
-      rock:         [5, 4, 3, 1, -1, -1, 1, 3, 4, 5],
-      vocal:        [-2, -3, -1, 2, 5, 5, 4, 2, 0, -2],
-      trebleBoost:  [0, 0, 0, 0, 0, 1, 2, 4, 5, 6]
-    };
-
-    function attachWebAudio() {
-      if (!dolbyToggle.checked && eqSelect.value === 'flat') {
-        return;
-      }
-
-      if (!audioCtx) {
-        try {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          audioCtx = new AudioContext();
-
-          trackSource = audioCtx.createMediaElementSource(audio);
-
-          eqFilters = FREQUENCIES.map((freq, i) => {
-            const filter = audioCtx.createBiquadFilter();
-            if (i === 0) {
-              filter.type = 'lowshelf';
-            } else if (i === FREQUENCIES.length - 1) {
-              filter.type = 'highshelf';
-            } else {
-              filter.type = 'peaking';
-              filter.Q.value = 1.4;
-            }
-            filter.frequency.value = freq;
-            filter.gain.value = 0;
-            return filter;
-          });
-
-          dolbyPanner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-          dolbyFilter = audioCtx.createBiquadFilter();
-          dolbyFilter.type = 'peaking';
-          dolbyFilter.frequency.value = 3500;
-          dolbyFilter.Q.value = 0.8;
-          dolbyFilter.gain.value = 0;
-
-          dolbyGain = audioCtx.createGain();
-          dolbyGain.gain.value = 1.0;
-
-          trackSource.connect(eqFilters[0]);
-          for (let i = 0; i < eqFilters.length - 1; i++) {
-            eqFilters[i].connect(eqFilters[i + 1]);
-          }
-
-          const lastEqNode = eqFilters[eqFilters.length - 1];
-          lastEqNode.connect(dolbyFilter);
-          
-          if (dolbyPanner) {
-            dolbyFilter.connect(dolbyPanner);
-            dolbyPanner.connect(dolbyGain);
-          } else {
-            dolbyFilter.connect(dolbyGain);
-          }
-
-          dolbyGain.connect(audioCtx.destination);
-        } catch (e) {
-          console.log("Web Audio API no iniciado");
-        }
-      }
-    }
-
-    // MANTENER AUDIO ACTIVO AL CAMBIAR DE PSTA EN SEGUNDO PLANO
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    });
-
     dolbyToggle.addEventListener('change', (e) => {
       attachWebAudio();
       if (audioCtx && audioCtx.state === 'suspended') {
@@ -766,10 +770,7 @@
     });
 
     function applyEQ(presetName) {
-      if (presetName !== 'flat') {
-        attachWebAudio();
-      }
-      
+      attachWebAudio();
       const gains = EQ_PRESETS[presetName] || EQ_PRESETS.flat;
       if (eqFilters.length > 0 && audioCtx) {
         eqFilters.forEach((filter, index) => {
@@ -946,9 +947,8 @@
     }
 
     function startPlayback(url, title, artist, album, cover) {
-      if (dolbyToggle.checked || eqSelect.value !== 'flat') {
-        attachWebAudio();
-      }
+      // Inicializar nodos si aún no existen
+      attachWebAudio();
 
       if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume();
@@ -959,7 +959,11 @@
 
       audio.play().then(() => {
         btnPlay.textContent = '⏸';
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.playbackState = "playing";
+        }
       }).catch(err => {
+        console.error("Error en startPlayback:", err);
         btnPlay.textContent = '▶';
       });
     }
@@ -1031,6 +1035,7 @@
     function togglePlay() {
       if (!audio.src) return;
 
+      attachWebAudio();
       if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume();
       }
@@ -1093,7 +1098,12 @@
     btnNext.addEventListener('click', playNext);
     btnPrev.addEventListener('click', playPrev);
 
+    // CONTROL AUTOMÁTICO DE TRANSICIÓN
     audio.addEventListener('ended', () => {
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
       if (repeatMode === 'one') {
         audio.currentTime = 0;
         audio.play().catch(console.error);
