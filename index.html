@@ -76,7 +76,6 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Ocultar barra de desplazamiento interna si ocurre */
     .player-card::-webkit-scrollbar {
       display: none;
     }
@@ -85,7 +84,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       flex-shrink: 0;
     }
 
@@ -117,30 +116,31 @@
       transform: scale(0.92);
     }
 
+    /* Ajuste para mantener la portada siempre 1:1 */
     .cover-container {
       width: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 8px 0 14px 0;
+      margin: 8px 0;
       flex-shrink: 1;
     }
 
     .cover-art {
       width: 100%;
-      max-width: 260px;
-      max-height: 30vh;
-      aspect-ratio: 1 / 1;
+      max-width: 250px;
+      aspect-ratio: 1 / 1; /* Forzar proporción cuadrada estricta */
       background: rgba(255, 255, 255, 0.1);
       border-radius: 20px;
       object-fit: cover;
       display: block;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.2);
+      flex-shrink: 0;
     }
 
     .track-info {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       flex-shrink: 0;
     }
 
@@ -183,7 +183,7 @@
     .controls-row {
       display: flex;
       gap: 10px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       flex-shrink: 0;
     }
 
@@ -267,7 +267,7 @@
 
     .progress-container {
       width: 100%;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       flex-shrink: 0;
     }
 
@@ -306,7 +306,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 10px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       flex-shrink: 0;
     }
 
@@ -824,7 +824,6 @@
       
       coverEl.src = track.cover;
       
-      // Aplicar el fondo con blur correctamente
       if (track.cover && track.cover !== DEFAULT_COVER) {
         bgBlur.style.backgroundImage = `url('${track.cover}')`;
       } else {
