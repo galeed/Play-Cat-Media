@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Michi Reproductor Web</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+  <title>Reproductor Web</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f1015">
   <style>
     :root {
       --bg: #0f1015;
@@ -36,7 +37,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0px;
+      padding: 12px;
       position: relative;
     }
 
@@ -130,7 +131,7 @@
       max-width: 250px;
       aspect-ratio: 1 / 1;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 0px;
+      border-radius: 20px;
       object-fit: cover;
       display: block;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
@@ -446,7 +447,6 @@
       font-weight: 700;
     }
 
-    /* Controles de la cola: Ordenamiento y Búsqueda */
     .playlist-tools {
       display: flex;
       flex-direction: column;
@@ -553,7 +553,7 @@
 
   <div class="player-card">
     <div class="player-header">
-      <span class="header-title">Michi Player App 🐈</span>
+      <span class="header-title">Reproductor</span>
       <div class="header-actions">
         <button class="btn-icon" id="btnToggleSearch" title="Buscar canción">🔍</button>
         <button class="btn-icon" id="btnToggleQueue" title="Cola de reproducción">☰</button>
@@ -647,8 +647,16 @@
   <audio id="audio" preload="auto" playsinline></audio>
 
   <script>
+    // Registro del Service Worker para funcionamiento sin conexión (Offline)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.warn('Registro de SW fallido: ', err);
+        });
+      });
+    }
+
     const DEFAULT_COVER = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>";
-    
     const HI_RES_SVG = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' fill='%23d4af37' rx='8'/><path d='M0 95 Q100 130 200 95 L200 200 L0 200 Z' fill='%23000000'/><text x='100' y='68' font-family='Arial Black, sans-serif' font-weight='900' font-size='56' fill='%23000000' text-anchor='middle'>Hi-Res</text><text x='100' y='165' font-family='Arial, sans-serif' font-weight='900' font-size='42' fill='%23d4af37' text-anchor='middle'>AUDIO</text></svg>`;
 
     const audio = document.getElementById('audio');
@@ -890,69 +898,59 @@
       }
     });
 
-    function createCoverBlobUrl(coverData) {
-      if (!coverData) return DEFAULT_COVER;
-      if (coverData.startsWith('data:')) {
-        try {
-          const parts = coverData.split(';base64,');
-          const contentType = parts[0].split(':')[1];
-          const raw = window.atob(parts[1]);
-          const uInt8Array = new Uint8Array(raw.length);
-          for (let i = 0; i < raw.length; ++i) {
-            uInt8Array[i] = raw.charCodeAt(i);
-          }
-          const blob = new Blob([uInt8Array], { type: contentType });
-          return URL.createObjectURL(blob);
-        } catch (e) {
-          return DEFAULT_COVER;
-        }
-      }
-      return coverData;
-    }
+    // Lector Básico ID3 nativo (sin dependencias externas de internet)
+    async function readMetadataNative(file) {
+      try {
+        const headerBuffer = await file.slice(0, 10).arrayBuffer();
+        const headerView = new DataView(headerBuffer);
+        
+        // Verificar firma ID3
+        if (headerView.getUint8(0) === 0x49 && headerView.getUint8(1) === 0x44 && headerView.getUint8(2) === 0x33) {
+          const size = (headerView.getUint8(6) & 0x7f) << 21 |
+                       (headerView.getUint8(7) & 0x7f) << 14 |
+                       (headerView.getUint8(8) & 0x7f) << 7 |
+                       (headerView.getUint8(9) & 0x7f);
+          
+          const tagBuffer = await file.slice(10, 10 + size).arrayBuffer();
+          const tagView = new DataView(tagBuffer);
+          let offset = 0;
+          let title = null, artist = null, album = null, cover = null;
 
-    function readMetadata(file) {
-      return new Promise((resolve) => {
-        if (!window.jsmediatags) {
-          resolve(null);
-          return;
-        }
+          while (offset < tagBuffer.byteLength - 10) {
+            const frameID = String.fromCharCode(
+              tagView.getUint8(offset), tagView.getUint8(offset+1),
+              tagView.getUint8(offset+2), tagView.getUint8(offset+3)
+            );
+            const frameSize = tagView.getUint32(offset + 4);
+            if (frameSize === 0 || offset + 10 + frameSize > tagBuffer.byteLength) break;
 
-        try {
-          window.jsmediatags.read(file, {
-            onSuccess: function(tag) {
-              const tags = tag.tags;
-              let coverUrl = null;
-
-              if (tags.picture) {
-                const { data, format } = tags.picture;
-                let base64String = "";
-                for (let i = 0; i < data.length; i++) {
-                  base64String += String.fromCharCode(data[i]);
-                }
-                const dataUri = `data:${format};base64,${window.btoa(base64String)}`;
-                coverUrl = createCoverBlobUrl(dataUri);
-              }
-
-              resolve({
-                title: tags.title || null,
-                artist: tags.artist || null,
-                album: tags.album || null,
-                cover: coverUrl
-              });
-            },
-            onError: function() {
-              resolve(null);
+            const frameData = new Uint8Array(tagBuffer, offset + 10, frameSize);
+            
+            if (frameID === 'TIT2') {
+              title = new TextDecoder('utf-8').decode(frameData.subarray(1)).replace(/\0/g, '');
+            } else if (frameID === 'TPE1') {
+              artist = new TextDecoder('utf-8').decode(frameData.subarray(1)).replace(/\0/g, '');
+            } else if (frameID === 'TALB') {
+              album = new TextDecoder('utf-8').decode(frameData.subarray(1)).replace(/\0/g, '');
+            } else if (frameID === 'APIC') {
+              let mimeEnd = 1;
+              while (frameData[mimeEnd] !== 0) mimeEnd++;
+              const mime = new TextDecoder('ascii').decode(frameData.subarray(1, mimeEnd));
+              const imgData = frameData.subarray(mimeEnd + 4);
+              const blob = new Blob([imgData], { type: mime || 'image/jpeg' });
+              cover = URL.createObjectURL(blob);
             }
-          });
-        } catch (e) {
-          resolve(null);
+
+            offset += 10 + frameSize;
+          }
+          return { title, artist, album, cover };
         }
-      });
+      } catch (e) {}
+      return null;
     }
 
     async function parseBinaryAudioSpecs(file) {
       const ext = file.name.split('.').pop().toLowerCase();
-      
       const buffer = await file.slice(0, 2048 * 1024).arrayBuffer();
       const uint8 = new Uint8Array(buffer);
       const view = new DataView(buffer);
@@ -971,7 +969,6 @@
 
         if (flacPos !== -1 && buffer.byteLength >= flacPos + 22) {
           const streamInfoPos = flacPos + 8;
-          
           const b10 = uint8[streamInfoPos + 10];
           const b11 = uint8[streamInfoPos + 11];
           const b12 = uint8[streamInfoPos + 12];
@@ -1045,7 +1042,7 @@
           const ext = file.name.split('.').pop().toLowerCase();
           const filename = file.name.replace(/\.[^/.]+$/, "");
           
-          const metaPromise = readMetadata(file);
+          const metaPromise = readMetadataNative(file);
           const specsPromise = parseBinaryAudioSpecs(file);
 
           const [meta, specsText] = await Promise.all([metaPromise, specsPromise]);
