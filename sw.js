@@ -1,12 +1,11 @@
-const CACHE_NAME = 'reproductor-app-v1';
+const CACHE_NAME = 'reproductor-app-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './icon.png' // Si tienes un icono para la app, agrégalo aquí
+  'https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js'
 ];
 
-// Instalación e intercepción de caché
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -31,7 +30,6 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Responde desde la caché primero; si no existe, intenta red
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
