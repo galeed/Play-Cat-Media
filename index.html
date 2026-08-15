@@ -546,6 +546,9 @@
       color: var(--text-muted);
     }
   </style>
+
+  <!-- Carga remota con autoguardado para uso Offline -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 </head>
 <body>
 
@@ -647,7 +650,7 @@
   <audio id="audio" preload="auto" playsinline></audio>
 
   <script>
-    // Registro del Service Worker para funcionamiento sin conexión (Offline)
+    // Registro del Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => {
@@ -898,55 +901,39 @@
       }
     });
 
-    // Lector Básico ID3 nativo (sin dependencias externas de internet)
-    async function readMetadataNative(file) {
-      try {
-        const headerBuffer = await file.slice(0, 10).arrayBuffer();
-        const headerView = new DataView(headerBuffer);
-        
-        // Verificar firma ID3
-        if (headerView.getUint8(0) === 0x49 && headerView.getUint8(1) === 0x44 && headerView.getUint8(2) === 0x33) {
-          const size = (headerView.getUint8(6) & 0x7f) << 21 |
-                       (headerView.getUint8(7) & 0x7f) << 14 |
-                       (headerView.getUint8(8) & 0x7f) << 7 |
-                       (headerView.getUint8(9) & 0x7f);
-          
-          const tagBuffer = await file.slice(10, 10 + size).arrayBuffer();
-          const tagView = new DataView(tagBuffer);
-          let offset = 0;
-          let title = null, artist = null, album = null, cover = null;
+    function readMetadataJsMediaTags(file) {
+      return new Promise((resolve) => {
+        if (typeof jsmediatags === 'undefined') {
+          resolve(null);
+          return;
+        }
 
-          while (offset < tagBuffer.byteLength - 10) {
-            const frameID = String.fromCharCode(
-              tagView.getUint8(offset), tagView.getUint8(offset+1),
-              tagView.getUint8(offset+2), tagView.getUint8(offset+3)
-            );
-            const frameSize = tagView.getUint32(offset + 4);
-            if (frameSize === 0 || offset + 10 + frameSize > tagBuffer.byteLength) break;
+        jsmediatags.read(file, {
+          onSuccess: function(tag) {
+            const tags = tag.tags;
+            let coverUrl = null;
 
-            const frameData = new Uint8Array(tagBuffer, offset + 10, frameSize);
-            
-            if (frameID === 'TIT2') {
-              title = new TextDecoder('utf-8').decode(frameData.subarray(1)).replace(/\0/g, '');
-            } else if (frameID === 'TPE1') {
-              artist = new TextDecoder('utf-8').decode(frameData.subarray(1)).replace(/\0/g, '');
-            } else if (frameID === 'TALB') {
-              album = new TextDecoder('utf-8').decode(frameData.subarray(1)).replace(/\0/g, '');
-            } else if (frameID === 'APIC') {
-              let mimeEnd = 1;
-              while (frameData[mimeEnd] !== 0) mimeEnd++;
-              const mime = new TextDecoder('ascii').decode(frameData.subarray(1, mimeEnd));
-              const imgData = frameData.subarray(mimeEnd + 4);
-              const blob = new Blob([imgData], { type: mime || 'image/jpeg' });
-              cover = URL.createObjectURL(blob);
+            if (tags.picture) {
+              const { data, format } = tags.picture;
+              let base64String = "";
+              for (let i = 0; i < data.length; i++) {
+                base64String += String.fromCharCode(data[i]);
+              }
+              coverUrl = `data:${format};base64,${window.btoa(base64String)}`;
             }
 
-            offset += 10 + frameSize;
+            resolve({
+              title: tags.title || null,
+              artist: tags.artist || null,
+              album: tags.album || null,
+              cover: coverUrl
+            });
+          },
+          onError: function(error) {
+            resolve(null);
           }
-          return { title, artist, album, cover };
-        }
-      } catch (e) {}
-      return null;
+        });
+      });
     }
 
     async function parseBinaryAudioSpecs(file) {
@@ -961,7 +948,7 @@
       if (ext === 'flac') {
         let flacPos = -1;
         for (let i = 0; i < uint8.length - 4; i++) {
-          if (uint8[i] === 0x66 && uint8[i+1] === 0x4C && uint8[i+2] === 0x61 && uint8[i+3] === 0x43) {
+          if (uint8[i] === 0x66 && uint8[i+1] === 0x6D && uint8[i+2] === 0x61 && uint8[i+3] === 0x43) {
             flacPos = i;
             break;
           }
@@ -1042,7 +1029,7 @@
           const ext = file.name.split('.').pop().toLowerCase();
           const filename = file.name.replace(/\.[^/.]+$/, "");
           
-          const metaPromise = readMetadataNative(file);
+          const metaPromise = readMetadataJsMediaTags(file);
           const specsPromise = parseBinaryAudioSpecs(file);
 
           const [meta, specsText] = await Promise.all([metaPromise, specsPromise]);
