@@ -852,18 +852,20 @@
 
     // --- CORRECCIÓN CLAVE PARA SEGUNDO PLANO Y PANTALLA BLOQUEADA ---
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        if (audioCtx && audioCtx.state === 'suspended') {
-          audioCtx.resume();
+    if (document.visibilityState === 'visible') {
+        if (audioCtx) {
+            if (audioCtx.state !== 'running') {
+                audioCtx.resume();
+            }
         }
-        if (!audio.paused && audio.readyState >= 2) {
-          audio.play().catch(() => {});
+        if (!audio.paused) {
+            audio.play().catch(() => {});
         }
-      }
-    });
+    }
+});
 
     audio.addEventListener('play', () => {
-      if (audioCtx && audioCtx.state === 'suspended') {
+      if (audioCtx && audioCtx.state === 'running') {
         audioCtx.resume();
       }
     });
