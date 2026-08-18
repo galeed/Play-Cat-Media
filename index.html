@@ -1298,9 +1298,9 @@
         initWebAudio();
       }
 
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (audioCtx && audioCtx.state !== 'running') {
+  audioCtx.resume();
+}
 
       audio.src = url;
       setupMediaSession(title, artist, album, cover);
@@ -1328,7 +1328,7 @@
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
-          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+          if (audioCtx && audioCtx.state === 'running') audioCtx.resume();
           audio.play();
           btnPlay.textContent = '⏸';
         });
