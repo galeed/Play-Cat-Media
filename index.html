@@ -166,12 +166,13 @@
       position: relative;
     }
 
+    /* --- PORTADA AMPLIADA Y CUADRADA --- */
     .cover-art {
       width: 100%;
-      max-width: 200px;
-      aspect-ratio: 1 / 1;
+      max-width: 235px; /* Aumentado de 200px a 235px para hacerla más grande */
+      aspect-ratio: 1 / 1; /* Mantiene la forma cuadrada perfectamente[cite: 2] */
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 0px;
+      border-radius: 0px; /* Ligeramente redondeada para mejor estética (puedes cambiarlo a 0px si prefieres los bordes rectos) */
       object-fit: cover;
       display: block;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
@@ -180,10 +181,11 @@
       z-index: 2;
     }
 
+    /* --- CANVAS DEL VISUALIZADOR AJUSTADO AL NUEVO TAMAÑO --- */
     .visualizer-canvas {
       position: absolute;
-      width: 220px;
-      height: 220px;
+      width: 255px; /* Aumentado proporcionalmente para rodear la nueva portada */
+      height: 255px;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -850,31 +852,29 @@
       }
     }
 
-    // --- CORRECCIÓN CLAVE PARA SEGUNDO PLANO Y PANTALLA BLOQUEADA ---
     document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible') {
         if (audioCtx) {
-            if (audioCtx.state !== 'running') {
-                audioCtx.resume();
-            }
+          if (audioCtx.state !== 'running') {
+            audioCtx.resume();
+          }
         }
         if (!audio.paused) {
-            audio.play().catch(() => {});
+          audio.play().catch(() => {});
         }
-    }
-});
+      }
+    });
 
     audio.addEventListener('play', () => {
       if (audioCtx && audioCtx.state === 'running') {
         audioCtx.resume();
       }
     });
-    // -------------------------------------------------------------
 
     function startVisualizer() {
       if (!canvas || !analyser) return;
-      canvas.width = 220;
-      canvas.height = 220;
+      canvas.width = 255;
+      canvas.height = 255;
 
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
@@ -888,7 +888,7 @@
         if (document.body.classList.contains('theme-classic-plus')) {
           const centerX = canvas.width / 2;
           const centerY = canvas.height / 2;
-          const radius = 100;
+          const radius = 115;
 
           canvasCtx.save();
           canvasCtx.translate(centerX, centerY);
@@ -925,9 +925,8 @@
       if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus')) {
         initWebAudio();
         if (audioCtx && audioCtx.state !== 'running') {
-  audioCtx.resume();
-}
-
+          audioCtx.resume();
+        }
       }
 
       if (audioCtx && eqFilters.length > 0) {
@@ -1299,8 +1298,8 @@
       }
 
       if (audioCtx && audioCtx.state !== 'running') {
-  audioCtx.resume();
-}
+        audioCtx.resume();
+      }
 
       audio.src = url;
       setupMediaSession(title, artist, album, cover);
@@ -1328,12 +1327,12 @@
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
-  if (audioCtx && audioCtx.state !== 'running') {
-    audioCtx.resume();
-  }
-  audio.play();
-  btnPlay.textContent = '⏸';
-});
+          if (audioCtx && audioCtx.state !== 'running') {
+            audioCtx.resume();
+          }
+          audio.play();
+          btnPlay.textContent = '⏸';
+        });
 
         navigator.mediaSession.setActionHandler('pause', () => {
           audio.pause();
@@ -1399,9 +1398,8 @@
       if (!audio.src) return;
 
       if (audioCtx && audioCtx.state !== 'running') {
-  audioCtx.resume();
-}
-
+        audioCtx.resume();
+      }
 
       if (audio.paused) {
         audio.play();
