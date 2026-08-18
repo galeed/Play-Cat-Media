@@ -25,55 +25,60 @@
     }
 
     html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: var(--bg);
-  color: var(--text);
-  margin: 0; /* Asegurar que no haya margen */
-}
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+    }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: var(--bg);
-  color: var(--text);
-  margin: 0;
-  padding: 0;
-}
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      /* Adaptación para áreas seguras de iOS */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
 
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  position: relative;
-  /* Espaciado seguro para adaptar los bordes superior e inferior en iOS */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-}
+    .bg-blur {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(40px) brightness(0.5) saturate(1.4);
+      transform: scale(1.15);
+      transition: background-image 0.6s ease-in-out;
+      z-index: 0;
+    }
 
-.player-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(25px) saturate(160%);
-  -webkit-backdrop-filter: blur(25px) saturate(160%);
-  width: calc(100% - 24px);
-  max-width: 380px;
-  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
-  padding: 20px;
-  border-radius: 28px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
-              inset 0 1px 1px rgba(255, 255, 255, 0.3);
-  border: 1px solid var(--card-border);
-  text-align: center;
-  z-index: 1;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  overflow: hidden;
-}
+    .player-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(25px) saturate(160%);
+      -webkit-backdrop-filter: blur(25px) saturate(160%);
+      width: calc(100% - 24px);
+      max-width: 380px;
+      max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
+      padding: 20px;
+      border-radius: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
+                  inset 0 1px 1px rgba(255, 255, 255, 0.3);
+      border: 1px solid var(--card-border);
+      text-align: center;
+      z-index: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
 
     .player-header {
       display: flex;
@@ -446,7 +451,6 @@ body {
       font-weight: 700;
     }
 
-    /* Controles de la cola: Ordenamiento y Búsqueda */
     .playlist-tools {
       display: flex;
       flex-direction: column;
@@ -1092,10 +1096,12 @@ body {
       
       coverEl.src = track.cover;
       
+      // Manejo actualizado y dinámico del fondo borroso
       if (track.cover && track.cover !== DEFAULT_COVER) {
-        bgBlur.style.backgroundImage = `url('${track.cover}')`;
+        bgBlur.style.backgroundImage = `url("${track.cover}")`;
       } else {
         bgBlur.style.backgroundImage = 'none';
+        bgBlur.style.backgroundColor = 'var(--bg)';
       }
 
       audioSpecsEl.innerHTML = track.specs || `${track.ext.toUpperCase()} | 16 bit | 44.1 kHz`;
