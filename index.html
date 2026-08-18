@@ -19,7 +19,6 @@
       --audio-spec-color: #8ab4f8;
     }
 
-    /* Estilo Meow Lyrics */
     body.theme-meow-lyrics {
       --bg: #0f1015;
       --card-bg: rgba(255, 255, 255, 0.15);
@@ -30,7 +29,6 @@
       --audio-spec-color: #8ab4f8;
     }
 
-    /* Meow Classic + */
     body.theme-classic-plus {
       --bg: #0b0c10;
       --card-bg: rgba(31, 40, 51, 0.75);
@@ -41,7 +39,6 @@
       --audio-spec-color: #66fcf1;
     }
 
-    /* Tema Radioactive ☢️ (Verde Tóxico y Amarillo Neón) */
     body.theme-radioactive {
       --bg: #030804;
       --card-bg: rgba(10, 30, 15, 0.75);
@@ -211,7 +208,6 @@
       transition: opacity 0.3s ease;
     }
 
-    /* Panel de Letras (Meow Lyrics) */
     .lyrics-container {
       position: absolute;
       width: 250px;
@@ -249,7 +245,6 @@
       word-break: break-word;
     }
 
-    /* Canvas del Visualizador Dinámico para Classic + y Radioactive */
     .visualizer-canvas {
       position: absolute;
       width: 270px;
@@ -850,57 +845,65 @@
     let dolbyFilter = null;
     let dolbyGain = null;
     let animationId = null;
+    let isAudioInitialized = false;
 
-    // --- INICIALIZACIÓN ÚNICA DEL WEB AUDIO (ESTABLE PARA SEGUNDO PLANO) ---
+    // --- INICIALIZACIÓN DE WEB AUDIO CON GESTIÓN DE ACCIÓN DE USUARIO ---
     function initWebAudio() {
-      if (!audioCtx) {
-        try {
-          const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-          audioCtx = new AudioCtxClass();
-          trackSource = audioCtx.createMediaElementSource(audio);
-
-          analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 64;
-
-          eqFilters = FREQUENCIES.map((freq, i) => {
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = (i === 0) ? 'lowshelf' : (i === FREQUENCIES.length - 1) ? 'highshelf' : 'peaking';
-            if (filter.type === 'peaking') filter.Q.value = 1.4;
-            filter.frequency.value = freq;
-            filter.gain.value = 0;
-            return filter;
-          });
-
-          dolbyFilter = audioCtx.createBiquadFilter();
-          dolbyFilter.type = 'peaking';
-          dolbyFilter.frequency.value = 3500;
-          dolbyFilter.Q.value = 0.8;
-          dolbyFilter.gain.value = 0;
-
-          dolbyGain = audioCtx.createGain();
-          dolbyGain.gain.value = 1.0;
-
-          // Cadena de nodos permanente
-          trackSource.connect(eqFilters[0]);
-          for (let i = 0; i < eqFilters.length - 1; i++) {
-            eqFilters[i].connect(eqFilters[i + 1]);
-          }
-          eqFilters[eqFilters.length - 1].connect(dolbyFilter);
-          dolbyFilter.connect(dolbyGain);
-          dolbyGain.connect(analyser);
-          analyser.connect(audioCtx.destination);
-
-          startVisualizer();
-        } catch (e) {
-          console.warn("WebAudio no disponible");
+      if (isAudioInitialized) {
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
         }
+        return;
+      }
+
+      try {
+        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioCtxClass();
+        trackSource = audioCtx.createMediaElementSource(audio);
+
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+
+        eqFilters = FREQUENCIES.map((freq, i) => {
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = (i === 0) ? 'lowshelf' : (i === FREQUENCIES.length - 1) ? 'highshelf' : 'peaking';
+          if (filter.type === 'peaking') filter.Q.value = 1.4;
+          filter.frequency.value = freq;
+          filter.gain.value = 0;
+          return filter;
+        });
+
+        dolbyFilter = audioCtx.createBiquadFilter();
+        dolbyFilter.type = 'peaking';
+        dolbyFilter.frequency.value = 3500;
+        dolbyFilter.Q.value = 0.8;
+        dolbyFilter.gain.value = 0;
+
+        dolbyGain = audioCtx.createGain();
+        dolbyGain.gain.value = 1.0;
+
+        // Conexión en cadena estable
+        trackSource.connect(eqFilters[0]);
+        for (let i = 0; i < eqFilters.length - 1; i++) {
+          eqFilters[i].connect(eqFilters[i + 1]);
+        }
+        eqFilters[eqFilters.length - 1].connect(dolbyFilter);
+        dolbyFilter.connect(dolbyGain);
+        dolbyGain.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        isAudioInitialized = true;
+        startVisualizer();
+        updateAudioEffects();
+
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch (e) {
+        console.warn("WebAudio no disponible o bloqueado:", e);
       }
     }
 
-    // Inicializar WebAudio desde el inicio para que el flujo sea idéntico en cualquier tema
-    initWebAudio();
-
-    // --- LÓGICA DE TEMAS ---
     function applyTheme(themeName) {
       document.body.classList.remove('theme-meow-lyrics', 'theme-classic-plus', 'theme-radioactive', 'theme-cyberpunk', 'theme-gold');
       if (themeName === 'meow-lyrics') {
@@ -950,7 +953,9 @@
 
       function draw() {
         animationId = requestAnimationFrame(draw);
-        analyser.getByteFrequencyData(dataArray);
+        if (analyser) {
+          analyser.getByteFrequencyData(dataArray);
+        }
 
         canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -995,7 +1000,7 @@
         audioCtx.resume();
       }
 
-      if (audioCtx && eqFilters.length > 0) {
+      if (isAudioInitialized && audioCtx && eqFilters.length > 0) {
         const gains = EQ_PRESETS[eqSelect.value] || EQ_PRESETS.flat;
         eqFilters.forEach((filter, index) => {
           filter.gain.setTargetAtTime(gains[index], audioCtx.currentTime, 0.05);
@@ -1362,9 +1367,7 @@
     }
 
     function startPlayback(url, title, artist, album, cover) {
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      initWebAudio();
 
       audio.src = url;
       setupMediaSession(title, artist, album, cover);
@@ -1392,7 +1395,7 @@
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
-          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+          initWebAudio();
           audio.play();
           btnPlay.textContent = '⏸';
         });
@@ -1460,9 +1463,7 @@
     function togglePlay() {
       if (!audio.src) return;
 
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      initWebAudio();
 
       if (audio.paused) {
         audio.play();
