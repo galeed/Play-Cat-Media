@@ -19,7 +19,7 @@
       --audio-spec-color: #8ab4f8;
     }
 
-    /* Estilo Meow Lyrics (Conserva la apariencia exacta de Meow Classic pero con panel de letras activo) */
+    /* Estilo Meow Lyrics */
     body.theme-meow-lyrics {
       --bg: #0f1015;
       --card-bg: rgba(255, 255, 255, 0.15);
@@ -30,7 +30,7 @@
       --audio-spec-color: #8ab4f8;
     }
 
-    /* Temas Secundarios y Meow Classic + */
+    /* Meow Classic + */
     body.theme-classic-plus {
       --bg: #0b0c10;
       --card-bg: rgba(31, 40, 51, 0.75);
@@ -39,6 +39,17 @@
       --text: #ffffff;
       --text-muted: rgba(255, 255, 255, 0.75);
       --audio-spec-color: #66fcf1;
+    }
+
+    /* Tema Radioactive ☢️ (Verde Tóxico y Amarillo Neón) */
+    body.theme-radioactive {
+      --bg: #030804;
+      --card-bg: rgba(10, 30, 15, 0.75);
+      --card-border: rgba(57, 255, 20, 0.5);
+      --accent: #39ff14;
+      --text: #f0fff0;
+      --text-muted: rgba(180, 255, 180, 0.75);
+      --audio-spec-color: #ccff00;
     }
 
     body.theme-cyberpunk {
@@ -220,7 +231,7 @@
     }
 
     body.theme-meow-lyrics .cover-art {
-      opacity: 0.15; /* Atenúa la portada de fondo para darle protagonismo al panel de letras manteniendo la estética classic */
+      opacity: 0.15;
     }
 
     .lyrics-text {
@@ -231,7 +242,7 @@
       word-break: break-word;
     }
 
-    /* Canvas del Visualizador Dinámico para Classic + */
+    /* Canvas del Visualizador Dinámico para Classic + y Radioactive */
     .visualizer-canvas {
       position: absolute;
       width: 220px;
@@ -245,7 +256,8 @@
       opacity: 0.85;
     }
 
-    body.theme-classic-plus .visualizer-canvas {
+    body.theme-classic-plus .visualizer-canvas,
+    body.theme-radioactive .visualizer-canvas {
       display: block;
     }
 
@@ -349,7 +361,7 @@
       outline: none;
       text-align: right;
       cursor: pointer;
-      max-width: 110px;
+      max-width: 120px;
     }
 
     .eq-select option, .theme-select option {
@@ -718,6 +730,7 @@
           <option value="classic">Meow Classic</option>
           <option value="meow-lyrics">Meow Lyrics</option>
           <option value="classic-plus">Meow Classic +</option>
+          <option value="radioactive">Radioactive ☢️</option>
           <option value="cyberpunk">Cyberpunk Neon</option>
           <option value="gold">Dark Gold</option>
         </select>
@@ -833,11 +846,13 @@
 
     // --- LÓGICA DE TEMAS ---
     function applyTheme(themeName) {
-      document.body.classList.remove('theme-meow-lyrics', 'theme-classic-plus', 'theme-cyberpunk', 'theme-gold');
+      document.body.classList.remove('theme-meow-lyrics', 'theme-classic-plus', 'theme-radioactive', 'theme-cyberpunk', 'theme-gold');
       if (themeName === 'meow-lyrics') {
         document.body.classList.add('theme-meow-lyrics');
       } else if (themeName === 'classic-plus') {
         document.body.classList.add('theme-classic-plus');
+      } else if (themeName === 'radioactive') {
+        document.body.classList.add('theme-radioactive');
       } else if (themeName === 'cyberpunk') {
         document.body.classList.add('theme-cyberpunk');
       } else if (themeName === 'gold') {
@@ -848,7 +863,7 @@
 
     themeSelect.addEventListener('change', (e) => {
       applyTheme(e.target.value);
-      if (e.target.value === 'classic-plus') {
+      if (e.target.value === 'classic-plus' || e.target.value === 'radioactive') {
         initWebAudio();
       }
     });
@@ -927,7 +942,7 @@
 
         canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (document.body.classList.contains('theme-classic-plus')) {
+        if (document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
           const centerX = canvas.width / 2;
           const centerY = canvas.height / 2;
           const radius = 100;
@@ -945,7 +960,8 @@
             const x2 = Math.cos(i * angleStep) * (radius + barHeight);
             const y2 = Math.sin(i * angleStep) * (radius + barHeight);
 
-            canvasCtx.strokeStyle = '#66fcf1';
+            // Cambiar color de las ondas según el tema activo
+            canvasCtx.strokeStyle = document.body.classList.contains('theme-radioactive') ? '#39ff14' : '#66fcf1';
             canvasCtx.lineWidth = 3;
             canvasCtx.lineCap = 'round';
 
@@ -964,7 +980,7 @@
     }
 
     function updateAudioEffects() {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus')) {
+      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
         initWebAudio();
         if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
@@ -1097,7 +1113,7 @@
         btnRepeat.classList.add('active');
       } else if (repeatMode === 'all') {
         repeatMode = 'one';
-        btnRepeat.textContent = '🔂';
+        btnRepeat.textContent = '🂂'; // Corregido el icono de repetir uno
         btnRepeat.classList.add('active');
       } else {
         repeatMode = 'off';
@@ -1338,7 +1354,7 @@
     }
 
     function startPlayback(url, title, artist, album, cover) {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus')) {
+      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
         initWebAudio();
       }
 
