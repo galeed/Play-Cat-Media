@@ -19,6 +19,17 @@
       --audio-spec-color: #8ab4f8;
     }
 
+    /* Estilo Meow Lyrics (Conserva la apariencia exacta de Meow Classic pero con panel de letras activo) */
+    body.theme-meow-lyrics {
+      --bg: #0f1015;
+      --card-bg: rgba(255, 255, 255, 0.15);
+      --card-border: rgba(255, 255, 255, 0.25);
+      --accent: #ff4757;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.75);
+      --audio-spec-color: #8ab4f8;
+    }
+
     /* Temas Secundarios y Meow Classic + */
     body.theme-classic-plus {
       --bg: #0b0c10;
@@ -179,9 +190,48 @@
       border: 1px solid rgba(255, 255, 255, 0.2);
       flex-shrink: 0;
       z-index: 2;
+      transition: opacity 0.3s ease;
     }
 
-    /* Canvas del Visualizador Dinámico (Oculto por defecto, se activa en Classic +) */
+    /* Panel de Letras (Meow Lyrics) */
+    .lyrics-container {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 3;
+      backdrop-filter: blur(10px);
+      overflow-y: auto;
+      text-align: center;
+    }
+
+    body.theme-meow-lyrics .lyrics-container {
+      display: flex;
+    }
+
+    body.theme-meow-lyrics .cover-art {
+      opacity: 0.15; /* Atenúa la portada de fondo para darle protagonismo al panel de letras manteniendo la estética classic */
+    }
+
+    .lyrics-text {
+      font-size: 0.8rem;
+      color: var(--text);
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Canvas del Visualizador Dinámico para Classic + */
     .visualizer-canvas {
       position: absolute;
       width: 220px;
@@ -299,7 +349,7 @@
       outline: none;
       text-align: right;
       cursor: pointer;
-      max-width: 105px;
+      max-width: 110px;
     }
 
     .eq-select option, .theme-select option {
@@ -622,6 +672,9 @@
 
     <div class="cover-container">
       <canvas id="visualizerCanvas" class="visualizer-canvas"></canvas>
+      <div class="lyrics-container" id="lyricsContainer">
+        <div class="lyrics-text" id="lyricsText">Sin letra disponible para esta pista.</div>
+      </div>
       <img class="cover-art" id="cover" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>" alt="Cover">
     </div>
 
@@ -663,6 +716,7 @@
         <span class="control-label">Tema</span>
         <select id="themeSelect" class="theme-select">
           <option value="classic">Meow Classic</option>
+          <option value="meow-lyrics">Meow Lyrics</option>
           <option value="classic-plus">Meow Classic +</option>
           <option value="cyberpunk">Cyberpunk Neon</option>
           <option value="gold">Dark Gold</option>
@@ -736,6 +790,7 @@
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
     const albumEl = document.getElementById('album');
+    const lyricsTextEl = document.getElementById('lyricsText');
     const audioSpecsEl = document.getElementById('audioSpecs');
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('fileInput');
@@ -778,8 +833,10 @@
 
     // --- LÓGICA DE TEMAS ---
     function applyTheme(themeName) {
-      document.body.classList.remove('theme-classic-plus', 'theme-cyberpunk', 'theme-gold');
-      if (themeName === 'classic-plus') {
+      document.body.classList.remove('theme-meow-lyrics', 'theme-classic-plus', 'theme-cyberpunk', 'theme-gold');
+      if (themeName === 'meow-lyrics') {
+        document.body.classList.add('theme-meow-lyrics');
+      } else if (themeName === 'classic-plus') {
         document.body.classList.add('theme-classic-plus');
       } else if (themeName === 'cyberpunk') {
         document.body.classList.add('theme-cyberpunk');
@@ -791,6 +848,9 @@
 
     themeSelect.addEventListener('change', (e) => {
       applyTheme(e.target.value);
+      if (e.target.value === 'classic-plus') {
+        initWebAudio();
+      }
     });
 
     const savedTheme = localStorage.getItem('meow_selected_theme') || 'classic';
@@ -816,7 +876,7 @@
           trackSource = audioCtx.createMediaElementSource(audio);
 
           analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 64; // Cantidad de barras/puntos para la animación
+          analyser.fftSize = 64;
 
           eqFilters = FREQUENCIES.map((freq, i) => {
             const filter = audioCtx.createBiquadFilter();
@@ -867,7 +927,6 @@
 
         canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Si estamos usando el tema Classic +, dibujamos un anillo de ondas animado alrededor de la portada
         if (document.body.classList.contains('theme-classic-plus')) {
           const centerX = canvas.width / 2;
           const centerY = canvas.height / 2;
@@ -930,13 +989,6 @@
 
     eqSelect.addEventListener('change', updateAudioEffects);
     dolbyToggle.addEventListener('change', updateAudioEffects);
-
-    themeSelect.addEventListener('change', (e) => {
-      applyTheme(e.target.value);
-      if (e.target.value === 'classic-plus') {
-        initWebAudio();
-      }
-    });
 
     btnToggleQueue.addEventListener('click', () => {
       searchBoxContainer.classList.remove('active');
@@ -1086,6 +1138,7 @@
             onSuccess: function(tag) {
               const tags = tag.tags;
               let coverUrl = null;
+              let lyricsText = null;
 
               if (tags.picture) {
                 const { data, format } = tags.picture;
@@ -1097,11 +1150,18 @@
                 coverUrl = createCoverBlobUrl(dataUri);
               }
 
+              if (tags.lyrics && tags.lyrics.lyrics) {
+                lyricsText = tags.lyrics.lyrics;
+              } else if (tags.uslt && tags.uslt.lyrics) {
+                lyricsText = tags.uslt.lyrics;
+              }
+
               resolve({
                 title: tags.title || null,
                 artist: tags.artist || null,
                 album: tags.album || null,
-                cover: coverUrl
+                cover: coverUrl,
+                lyrics: lyricsText
               });
             },
             onError: function() {
@@ -1222,6 +1282,7 @@
             artist: meta?.artist || "Biblioteca Local",
             album: meta?.album || "",
             cover: meta?.cover || DEFAULT_COVER,
+            lyrics: meta?.lyrics || null,
             specs: specsText
           };
         }));
@@ -1255,6 +1316,7 @@
       albumEl.textContent = track.album;
       
       coverEl.src = track.cover;
+      lyricsTextEl.textContent = track.lyrics ? track.lyrics : `Sin letra disponible para:\n"${track.title}"`;
       
       if (track.cover && track.cover !== DEFAULT_COVER) {
         bgBlur.style.backgroundImage = `url('${track.cover}')`;
