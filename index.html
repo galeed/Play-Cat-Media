@@ -61,14 +61,16 @@ body {
     }
 
     .player-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(25px) saturate(160%);
-      -webkit-backdrop-filter: blur(25px) saturate(160%);
-      width: 100%;
-      max-width: 380px;
-      max-height: 100dvh;
-      padding: 20px;
-      border-radius: 28px;
+  background: var(--card-bg);
+  backdrop-filter: blur(25px) saturate(160%);
+  -webkit-backdrop-filter: blur(25px) saturate(160%);
+  width: calc(100% - 24px); /* Ajuste lateral para que no toque los bordes */
+  max-width: 380px;
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  margin-top: env(safe-area-inset-top); /* Baja la tarjeta lo suficiente para que no tape el notch */
+  padding: 20px;
+  border-radius: 28px;
+
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
                   inset 0 1px 1px rgba(255, 255, 255, 0.3);
       border: 1px solid var(--card-border);
