@@ -1396,9 +1396,10 @@
     function togglePlay() {
       if (!audio.src) return;
 
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (audioCtx && audioCtx.state !== 'running') {
+  audioCtx.resume();
+}
+
 
       if (audio.paused) {
         audio.play();
