@@ -1328,10 +1328,12 @@
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
-          if (audioCtx && audioCtx.state === 'running') audioCtx.resume();
-          audio.play();
-          btnPlay.textContent = '⏸';
-        });
+  if (audioCtx && audioCtx.state !== 'running') {
+    audioCtx.resume();
+  }
+  audio.play();
+  btnPlay.textContent = '⏸';
+});
 
         navigator.mediaSession.setActionHandler('pause', () => {
           audio.pause();
