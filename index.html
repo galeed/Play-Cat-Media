@@ -19,28 +19,54 @@
       --audio-spec-color: #8ab4f8;
     }
 
-    [data-theme="dark"] {
-      --bg: #0a0a0c;
-      --card-bg: rgba(20, 20, 25, 0.65);
-      --card-border: rgba(255, 255, 255, 0.15);
-      --accent: #3b82f6;
-      --audio-spec-color: #60a5fa;
+    body.theme-meow-lyrics {
+      --bg: #0f1015;
+      --card-bg: rgba(255, 255, 255, 0.15);
+      --card-border: rgba(255, 255, 255, 0.25);
+      --accent: #ff4757;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.75);
+      --audio-spec-color: #8ab4f8;
     }
 
-    [data-theme="neon"] {
-      --bg: #050508;
-      --card-bg: rgba(10, 10, 20, 0.7);
-      --card-border: rgba(0, 243, 255, 0.4);
-      --accent: #00f3ff;
-      --audio-spec-color: #ff0055;
+    body.theme-classic-plus {
+      --bg: #0b0c10;
+      --card-bg: rgba(31, 40, 51, 0.75);
+      --card-border: rgba(102, 252, 241, 0.4);
+      --accent: #66fcf1;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.75);
+      --audio-spec-color: #66fcf1;
     }
 
-    [data-theme="midnight"] {
-      --bg: #09111e;
-      --card-bg: rgba(16, 30, 54, 0.5);
-      --card-border: rgba(96, 165, 250, 0.3);
-      --accent: #60a5fa;
-      --audio-spec-color: #34d399;
+    body.theme-radioactive {
+      --bg: #030804;
+      --card-bg: rgba(10, 30, 15, 0.75);
+      --card-border: rgba(57, 255, 20, 0.5);
+      --accent: #39ff14;
+      --text: #f0fff0;
+      --text-muted: rgba(180, 255, 180, 0.75);
+      --audio-spec-color: #ccff00;
+    }
+
+    body.theme-cyberpunk {
+      --bg: #05050a;
+      --card-bg: rgba(18, 18, 31, 0.75);
+      --card-border: rgba(244, 63, 94, 0.4);
+      --accent: #f43f5e;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.7);
+      --audio-spec-color: #f43f5e;
+    }
+
+    body.theme-gold {
+      --bg: #121212;
+      --card-bg: rgba(30, 30, 30, 0.75);
+      --card-border: rgba(212, 175, 55, 0.4);
+      --accent: #d4af37;
+      --text: #fefefe;
+      --text-muted: rgba(255, 255, 255, 0.7);
+      --audio-spec-color: #d4af37;
     }
 
     * {
@@ -56,7 +82,6 @@
       height: 100%;
       overflow: hidden;
       background-color: var(--bg);
-      transition: background-color 0.4s ease;
     }
 
     body {
@@ -72,6 +97,7 @@
       overflow: hidden;
       background-color: transparent;
       color: var(--text);
+      transition: background-color 0.4s ease;
     }
 
     .bg-blur {
@@ -164,6 +190,7 @@
       align-items: center;
       margin: 8px 0;
       flex-shrink: 1;
+      position: relative;
     }
 
     .cover-art {
@@ -177,6 +204,63 @@
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.2);
       flex-shrink: 0;
+      z-index: 2;
+      transition: opacity 0.3s ease;
+    }
+
+    .lyrics-container {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 3;
+      backdrop-filter: blur(10px);
+      overflow-y: auto;
+      text-align: center;
+    }
+
+    body.theme-meow-lyrics .lyrics-container {
+      display: flex;
+    }
+
+    body.theme-meow-lyrics .cover-art {
+      opacity: 0.15;
+    }
+
+    .lyrics-text {
+      font-size: 0.82rem;
+      color: var(--text);
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .visualizer-canvas {
+      position: absolute;
+      width: 270px;
+      height: 270px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1;
+      display: none;
+      opacity: 0.85;
+    }
+
+    body.theme-classic-plus .visualizer-canvas,
+    body.theme-radioactive .visualizer-canvas {
+      display: block;
     }
 
     .track-info {
@@ -279,12 +363,12 @@
       outline: none;
       text-align: right;
       cursor: pointer;
-      max-width: 95px;
+      max-width: 120px;
     }
 
     .eq-select option, .theme-select option {
       background: #1c1c24;
-      color: var(--text);
+      color: #ffffff;
     }
 
     .toggle-switch {
@@ -601,6 +685,10 @@
     </div>
 
     <div class="cover-container">
+      <canvas id="visualizerCanvas" class="visualizer-canvas"></canvas>
+      <div class="lyrics-container" id="lyricsContainer">
+        <div class="lyrics-text" id="lyricsText">Sin letra disponible para esta pista.</div>
+      </div>
       <img class="cover-art" id="cover" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>" alt="Cover">
     </div>
 
@@ -614,18 +702,7 @@
 
     <div class="status-badge" id="status"></div>
 
-    <!-- SECCIÓN DE CONTROLES: TEMA Y EQ / DOLBY -->
     <div class="controls-row">
-      <div class="control-box">
-        <span class="control-label">Tema</span>
-        <select id="themeSelect" class="theme-select">
-          <option value="default">Default</option>
-          <option value="dark">Oscuro</option>
-          <option value="neon">Neón</option>
-          <option value="midnight">Midnight</option>
-        </select>
-      </div>
-
       <div class="control-box">
         <span class="control-label">EQ</span>
         <select id="eqSelect" class="eq-select">
@@ -638,15 +715,27 @@
           <option value="rock">Rock</option>
         </select>
       </div>
-    </div>
 
-    <div class="controls-row">
-      <div class="control-box" style="flex: 1;">
+      <div class="control-box">
         <span class="control-label">Dolby</span>
         <label class="toggle-switch">
           <input type="checkbox" id="dolbyToggle">
           <span class="slider"></span>
         </label>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="control-box" style="flex: 1;">
+        <span class="control-label">Tema</span>
+        <select id="themeSelect" class="theme-select">
+          <option value="classic">Meow Classic</option>
+          <option value="meow-lyrics">Meow Lyrics</option>
+          <option value="classic-plus">Meow Classic +</option>
+          <option value="radioactive">Radioactive ☢️</option>
+          <option value="cyberpunk">Cyberpunk Neon</option>
+          <option value="gold">Dark Gold</option>
+        </select>
       </div>
     </div>
 
@@ -716,6 +805,7 @@
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
     const albumEl = document.getElementById('album');
+    const lyricsTextEl = document.getElementById('lyricsText');
     const audioSpecsEl = document.getElementById('audioSpecs');
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('fileInput');
@@ -737,6 +827,9 @@
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
 
+    const canvas = document.getElementById('visualizerCanvas');
+    const canvasCtx = canvas.getContext('2d');
+
     let playlist = [];
     let currentIndex = 0;
     let currentObjectUrl = null;
@@ -747,43 +840,29 @@
 
     let audioCtx = null;
     let trackSource = null;
+    let analyser = null;
     let eqFilters = [];
     let dolbyFilter = null;
     let dolbyGain = null;
-    let isWebAudioConnected = false;
+    let animationId = null;
+    let isAudioInitialized = false;
 
-    const FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-    const EQ_PRESETS = {
-      flat:         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      bassBoost:    [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
-      electronic:   [5, 4, 2, 0, -2, 2, 1, 2, 4, 5],
-      hiphop:       [5, 4, 2, 3, -1, -1, 1, -1, 2, 3],
-      jazz:         [4, 3, 2, 2, -2, -2, 0, 1, 3, 4],
-      pop:          [-2, -1, 2, 4, 5, 4, 2, -1, -2, -2],
-      rock:         [5, 4, 3, 1, -1, -1, 1, 3, 4, 5]
-    };
-
-    // Cambio de tema visual
-    themeSelect.addEventListener('change', () => {
-      const theme = themeSelect.value;
-      if (theme === 'default') {
-        document.documentElement.removeAttribute('data-theme');
-      } else {
-        document.documentElement.setAttribute('data-theme', theme);
-      }
-    });
-
+    // --- INICIALIZACIÓN DE WEB AUDIO CON GESTIÓN DE ACCIÓN DE USUARIO ---
     function initWebAudio() {
-      if (audioCtx) {
-        if (audioCtx.state === 'suspended') {
+      if (isAudioInitialized) {
+        if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
         return;
       }
+
       try {
         const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioCtxClass();
         trackSource = audioCtx.createMediaElementSource(audio);
+
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
 
         eqFilters = FREQUENCIES.map((freq, i) => {
           const filter = audioCtx.createBiquadFilter();
@@ -803,42 +882,136 @@
         dolbyGain = audioCtx.createGain();
         dolbyGain.gain.value = 1.0;
 
+        // Conexión en cadena estable
         trackSource.connect(eqFilters[0]);
         for (let i = 0; i < eqFilters.length - 1; i++) {
           eqFilters[i].connect(eqFilters[i + 1]);
         }
         eqFilters[eqFilters.length - 1].connect(dolbyFilter);
         dolbyFilter.connect(dolbyGain);
-        dolbyGain.connect(audioCtx.destination);
-        
-        isWebAudioConnected = true;
-      } catch (e) {
-        console.warn("WebAudio no soportado o error de enlace:", e);
-      }
-    }
+        dolbyGain.connect(analyser);
+        analyser.connect(audioCtx.destination);
 
-    function updateAudioEffects() {
-      if ((eqSelect.value !== 'flat' || dolbyToggle.checked) && !audioCtx) {
-        initWebAudio();
-      }
+        isAudioInitialized = true;
+        startVisualizer();
+        updateAudioEffects();
 
-      if (audioCtx) {
         if (audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
-        if (eqFilters.length > 0) {
-          const gains = EQ_PRESETS[eqSelect.value] || EQ_PRESETS.flat;
-          eqFilters.forEach((filter, index) => {
-            filter.gain.setTargetAtTime(gains[index], audioCtx.currentTime, 0.05);
-          });
+      } catch (e) {
+        console.warn("WebAudio no disponible o bloqueado:", e);
+      }
+    }
 
-          if (dolbyToggle.checked) {
-            dolbyFilter.gain.setTargetAtTime(4.5, audioCtx.currentTime, 0.1);
-            dolbyGain.gain.setTargetAtTime(1.15, audioCtx.currentTime, 0.1);
-          } else {
-            dolbyFilter.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-            dolbyGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.1);
+    function applyTheme(themeName) {
+      document.body.classList.remove('theme-meow-lyrics', 'theme-classic-plus', 'theme-radioactive', 'theme-cyberpunk', 'theme-gold');
+      if (themeName === 'meow-lyrics') {
+        document.body.classList.add('theme-meow-lyrics');
+      } else if (themeName === 'classic-plus') {
+        document.body.classList.add('theme-classic-plus');
+      } else if (themeName === 'radioactive') {
+        document.body.classList.add('theme-radioactive');
+      } else if (themeName === 'cyberpunk') {
+        document.body.classList.add('theme-cyberpunk');
+      } else if (themeName === 'gold') {
+        document.body.classList.add('theme-gold');
+      }
+      localStorage.setItem('meow_selected_theme', themeName);
+
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    themeSelect.addEventListener('change', (e) => {
+      applyTheme(e.target.value);
+    });
+
+    const savedTheme = localStorage.getItem('meow_selected_theme') || 'classic';
+    themeSelect.value = savedTheme;
+    applyTheme(savedTheme);
+
+    const FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+    const EQ_PRESETS = {
+      flat:         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      bassBoost:    [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
+      electronic:   [5, 4, 2, 0, -2, 2, 1, 2, 4, 5],
+      hiphop:       [5, 4, 2, 3, -1, -1, 1, -1, 2, 3],
+      jazz:         [4, 3, 2, 2, -2, -2, 0, 1, 3, 4],
+      pop:          [-2, -1, 2, 4, 5, 4, 2, -1, -2, -2],
+      rock:         [5, 4, 3, 1, -1, -1, 1, 3, 4, 5]
+    };
+
+    function startVisualizer() {
+      if (!canvas || !analyser) return;
+      canvas.width = 270;
+      canvas.height = 270;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      function draw() {
+        animationId = requestAnimationFrame(draw);
+        if (analyser) {
+          analyser.getByteFrequencyData(dataArray);
+        }
+
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2;
+          const radius = 125;
+
+          canvasCtx.save();
+          canvasCtx.translate(centerX, centerY);
+
+          const bars = 32;
+          const angleStep = (Math.PI * 2) / bars;
+
+          for (let i = 0; i < bars; i++) {
+            const barHeight = (dataArray[i] / 255) * 40;
+            const x1 = Math.cos(i * angleStep) * radius;
+            const y1 = Math.sin(i * angleStep) * radius;
+            const x2 = Math.cos(i * angleStep) * (radius + barHeight);
+            const y2 = Math.sin(i * angleStep) * (radius + barHeight);
+
+            canvasCtx.strokeStyle = document.body.classList.contains('theme-radioactive') ? '#39ff14' : '#66fcf1';
+            canvasCtx.lineWidth = 3;
+            canvasCtx.lineCap = 'round';
+
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(x1, y1);
+            canvasCtx.lineTo(x2, y2);
+            canvasCtx.stroke();
           }
+
+          canvasCtx.restore();
+        }
+      }
+
+      if (animationId) cancelAnimationFrame(animationId);
+      draw();
+    }
+
+    function updateAudioEffects() {
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      if (isAudioInitialized && audioCtx && eqFilters.length > 0) {
+        const gains = EQ_PRESETS[eqSelect.value] || EQ_PRESETS.flat;
+        eqFilters.forEach((filter, index) => {
+          filter.gain.setTargetAtTime(gains[index], audioCtx.currentTime, 0.05);
+        });
+
+        if (dolbyToggle.checked) {
+          dolbyFilter.gain.setTargetAtTime(4.5, audioCtx.currentTime, 0.1);
+          dolbyGain.gain.setTargetAtTime(1.15, audioCtx.currentTime, 0.1);
+        } else {
+          dolbyFilter.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+          dolbyGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.1);
         }
       }
     }
@@ -994,6 +1167,7 @@
             onSuccess: function(tag) {
               const tags = tag.tags;
               let coverUrl = null;
+              let lyricsText = null;
 
               if (tags.picture) {
                 const { data, format } = tags.picture;
@@ -1005,11 +1179,18 @@
                 coverUrl = createCoverBlobUrl(dataUri);
               }
 
+              if (tags.lyrics && tags.lyrics.lyrics) {
+                lyricsText = tags.lyrics.lyrics;
+              } else if (tags.uslt && tags.uslt.lyrics) {
+                lyricsText = tags.uslt.lyrics;
+              }
+
               resolve({
                 title: tags.title || null,
                 artist: tags.artist || null,
                 album: tags.album || null,
-                cover: coverUrl
+                cover: coverUrl,
+                lyrics: lyricsText
               });
             },
             onError: function() {
@@ -1130,6 +1311,7 @@
             artist: meta?.artist || "Biblioteca Local",
             album: meta?.album || "",
             cover: meta?.cover || DEFAULT_COVER,
+            lyrics: meta?.lyrics || null,
             specs: specsText
           };
         }));
@@ -1163,6 +1345,7 @@
       albumEl.textContent = track.album;
       
       coverEl.src = track.cover;
+      lyricsTextEl.textContent = track.lyrics ? track.lyrics : `Sin letra disponible para:\n"${track.title}"`;
       
       if (track.cover && track.cover !== DEFAULT_COVER) {
         bgBlur.style.backgroundImage = `url('${track.cover}')`;
@@ -1184,13 +1367,7 @@
     }
 
     function startPlayback(url, title, artist, album, cover) {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked) {
-        initWebAudio();
-      }
-
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      initWebAudio();
 
       audio.src = url;
       setupMediaSession(title, artist, album, cover);
@@ -1218,7 +1395,7 @@
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
-          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+          initWebAudio();
           audio.play();
           btnPlay.textContent = '⏸';
         });
@@ -1286,9 +1463,7 @@
     function togglePlay() {
       if (!audio.src) return;
 
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      initWebAudio();
 
       if (audio.paused) {
         audio.play();
