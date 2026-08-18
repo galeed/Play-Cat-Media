@@ -19,6 +19,30 @@
       --audio-spec-color: #8ab4f8;
     }
 
+    [data-theme="dark"] {
+      --bg: #0a0a0c;
+      --card-bg: rgba(20, 20, 25, 0.65);
+      --card-border: rgba(255, 255, 255, 0.15);
+      --accent: #3b82f6;
+      --audio-spec-color: #60a5fa;
+    }
+
+    [data-theme="neon"] {
+      --bg: #050508;
+      --card-bg: rgba(10, 10, 20, 0.7);
+      --card-border: rgba(0, 243, 255, 0.4);
+      --accent: #00f3ff;
+      --audio-spec-color: #ff0055;
+    }
+
+    [data-theme="midnight"] {
+      --bg: #09111e;
+      --card-bg: rgba(16, 30, 54, 0.5);
+      --card-border: rgba(96, 165, 250, 0.3);
+      --accent: #60a5fa;
+      --audio-spec-color: #34d399;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -32,6 +56,7 @@
       height: 100%;
       overflow: hidden;
       background-color: var(--bg);
+      transition: background-color 0.4s ease;
     }
 
     body {
@@ -88,6 +113,7 @@
       overflow: hidden;
       margin-top: env(safe-area-inset-top);
       margin-bottom: env(safe-area-inset-bottom);
+      transition: background 0.4s ease, border-color 0.4s ease;
     }
 
     .player-header {
@@ -244,7 +270,7 @@
       text-transform: uppercase;
     }
 
-    .eq-select {
+    .eq-select, .theme-select {
       background: transparent;
       color: #ffffff;
       border: none;
@@ -256,7 +282,7 @@
       max-width: 95px;
     }
 
-    .eq-select option {
+    .eq-select option, .theme-select option {
       background: #1c1c24;
       color: var(--text);
     }
@@ -588,7 +614,18 @@
 
     <div class="status-badge" id="status"></div>
 
+    <!-- SECCIÓN DE CONTROLES: TEMA Y EQ / DOLBY -->
     <div class="controls-row">
+      <div class="control-box">
+        <span class="control-label">Tema</span>
+        <select id="themeSelect" class="theme-select">
+          <option value="default">Default</option>
+          <option value="dark">Oscuro</option>
+          <option value="neon">Neón</option>
+          <option value="midnight">Midnight</option>
+        </select>
+      </div>
+
       <div class="control-box">
         <span class="control-label">EQ</span>
         <select id="eqSelect" class="eq-select">
@@ -601,8 +638,10 @@
           <option value="rock">Rock</option>
         </select>
       </div>
+    </div>
 
-      <div class="control-box">
+    <div class="controls-row">
+      <div class="control-box" style="flex: 1;">
         <span class="control-label">Dolby</span>
         <label class="toggle-switch">
           <input type="checkbox" id="dolbyToggle">
@@ -682,6 +721,7 @@
     const fileInput = document.getElementById('fileInput');
     const eqSelect = document.getElementById('eqSelect');
     const dolbyToggle = document.getElementById('dolbyToggle');
+    const themeSelect = document.getElementById('themeSelect');
 
     const seekBar = document.getElementById('seekBar');
     const currentTimeEl = document.getElementById('currentTime');
@@ -723,6 +763,16 @@
       rock:         [5, 4, 3, 1, -1, -1, 1, 3, 4, 5]
     };
 
+    // Cambio de tema visual
+    themeSelect.addEventListener('change', () => {
+      const theme = themeSelect.value;
+      if (theme === 'default') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+    });
+
     function initWebAudio() {
       if (audioCtx) {
         if (audioCtx.state === 'suspended') {
@@ -753,7 +803,6 @@
         dolbyGain = audioCtx.createGain();
         dolbyGain.gain.value = 1.0;
 
-        // Conectar la cadena completa
         trackSource.connect(eqFilters[0]);
         for (let i = 0; i < eqFilters.length - 1; i++) {
           eqFilters[i].connect(eqFilters[i + 1]);
@@ -769,7 +818,6 @@
     }
 
     function updateAudioEffects() {
-      // Si el usuario activa EQ o Dolby, inicializamos la Web Audio API si no estaba creada
       if ((eqSelect.value !== 'flat' || dolbyToggle.checked) && !audioCtx) {
         initWebAudio();
       }
@@ -1136,7 +1184,6 @@
     }
 
     function startPlayback(url, title, artist, album, cover) {
-      // Si el ecualizador o dolby están activos, inicializamos el contexto de audio
       if (eqSelect.value !== 'flat' || dolbyToggle.checked) {
         initWebAudio();
       }
