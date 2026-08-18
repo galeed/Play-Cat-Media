@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
   <title>Reproductor Web OFFLINE</title>
 
@@ -29,77 +28,75 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html {
   width: 100%;
   height: 100%;
-  /* Asegura cubrir toda la pantalla del iPhone incluyendo el área del notch */
+  height: -webkit-fill-available;
+  overflow: hidden;
+  background-color: var(--bg);
+}
+
+body {
+  width: 100%;
+  height: 100dvh; /* Usa unidades dinámicas del viewport */
   min-height: 100vh;
   min-height: -webkit-fill-available;
   margin: 0;
   padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   overflow: hidden;
   background-color: var(--bg);
   color: var(--text);
 }
 
+/* El fondo expandido a la pantalla física completa (notch + barra de gestos) */
 .bg-blur {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  /* El escalado evita bordes blancos al aplicar el desenfoque */
-  transform: scale(1.15);
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100dvh;
+  background-size: cover;
+  background-position: center;
+  filter: blur(40px) brightness(0.5) saturate(1.4);
+  transform: scale(1.25); /* Escala suficiente para que no queden bordes al desenfocar */
   z-index: 0;
 }
 
+/* La tarjeta del reproductor se ajusta automáticamente entre las áreas seguras */
+.player-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(25px) saturate(160%);
+  -webkit-backdrop-filter: blur(25px) saturate(160%);
+  width: calc(100% - 24px);
+  max-width: 380px;
+  
+  /* Restamos los insets superior e inferior para que no choque con el notch ni la barra inferior */
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+  
+  padding: 20px;
+  border-radius: 28px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
+              inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--card-border);
+  text-align: center;
+  z-index: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
 
+  /* Aplica los márgenes de seguridad solo a la tarjeta, permitiendo que el fondo se vea detrás */
+  margin-top: env(safe-area-inset-top);
+  margin-bottom: env(safe-area-inset-bottom);
+}
 
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      /* Adaptación para áreas seguras de iOS */
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    .bg-blur {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      filter: blur(40px) brightness(0.5) saturate(1.4);
-      transform: scale(1.15);
-      transition: background-image 0.6s ease-in-out;
-      z-index: 0;
-    }
-
-    .player-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(25px) saturate(160%);
-      -webkit-backdrop-filter: blur(25px) saturate(160%);
-      width: calc(100% - 24px);
-      max-width: 380px;
-      max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
-      padding: 20px;
-      border-radius: 28px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
-                  inset 0 1px 1px rgba(255, 255, 255, 0.3);
-      border: 1px solid var(--card-border);
-      text-align: center;
-      z-index: 1;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-    }
 
     .player-header {
       display: flex;
