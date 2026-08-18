@@ -924,9 +924,10 @@
     function updateAudioEffects() {
       if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus')) {
         initWebAudio();
-        if (audioCtx && audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
+        if (audioCtx && audioCtx.state !== 'running') {
+  audioCtx.resume();
+}
+
       }
 
       if (audioCtx && eqFilters.length > 0) {
