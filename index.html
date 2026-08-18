@@ -30,25 +30,29 @@
     }
 
     html, body {
-  margin: 0;
-  padding: 0;
   width: 100%;
   height: 100%;
-  /* Asegura cubrir la pantalla completa en iOS Safari */
+  /* Asegura cubrir toda la pantalla del iPhone incluyendo el área del notch */
   min-height: 100vh;
   min-height: -webkit-fill-available;
-  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
-/* Si tu animación está en un canvas o div de fondo */
-#fondo-animado {
-  position: fixed;
+.bg-blur {
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
+  width: 100%;
+  height: 100%;
+  /* El escalado evita bordes blancos al aplicar el desenfoque */
+  transform: scale(1.15);
+  z-index: 0;
 }
+
 
 
     body {
