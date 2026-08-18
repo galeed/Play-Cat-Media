@@ -26,20 +26,25 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
     }
 
     html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: var(--bg);
-      color: var(--text);
-    }
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--text);
+  margin: 0; /* Asegurar que no haya margen */
+}
 
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px;
-      position: relative;
-    }
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0; /* Quitamos el padding global para que el fondo cubra todo */
+  position: relative;
+  /* Esto ayuda a que el iPhone respete el notch en el contenido */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 
     .bg-blur {
       position: absolute;
