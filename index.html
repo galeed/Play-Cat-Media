@@ -19,7 +19,6 @@
       --audio-spec-color: #8ab4f8;
     }
 
-    /* Temas Secundarios y Meow Classic + */
     body.theme-classic-plus {
       --bg: #0b0c10;
       --card-bg: rgba(31, 40, 51, 0.75);
@@ -181,7 +180,6 @@
       z-index: 2;
     }
 
-    /* Canvas del Visualizador Dinámico (Oculto por defecto, se activa en Classic +) */
     .visualizer-canvas {
       position: absolute;
       width: 220px;
@@ -776,7 +774,6 @@
     let dolbyGain = null;
     let animationId = null;
 
-    // --- LÓGICA DE TEMAS ---
     function applyTheme(themeName) {
       document.body.classList.remove('theme-classic-plus', 'theme-cyberpunk', 'theme-gold');
       if (themeName === 'classic-plus') {
@@ -816,7 +813,7 @@
           trackSource = audioCtx.createMediaElementSource(audio);
 
           analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 64; // Cantidad de barras/puntos para la animación
+          analyser.fftSize = 64;
 
           eqFilters = FREQUENCIES.map((freq, i) => {
             const filter = audioCtx.createBiquadFilter();
@@ -853,6 +850,25 @@
       }
     }
 
+    // --- CORRECCIÓN CLAVE PARA SEGUNDO PLANO Y PANTALLA BLOQUEADA ---
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        if (!audio.paused && audio.readyState >= 2) {
+          audio.play().catch(() => {});
+        }
+      }
+    });
+
+    audio.addEventListener('play', () => {
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    });
+    // -------------------------------------------------------------
+
     function startVisualizer() {
       if (!canvas || !analyser) return;
       canvas.width = 220;
@@ -867,7 +883,6 @@
 
         canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Si estamos usando el tema Classic +, dibujamos un anillo de ondas animado alrededor de la portada
         if (document.body.classList.contains('theme-classic-plus')) {
           const centerX = canvas.width / 2;
           const centerY = canvas.height / 2;
