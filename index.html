@@ -19,7 +19,17 @@
       --audio-spec-color: #8ab4f8;
     }
 
-    /* Temas Secundarios */
+    /* Temas Secundarios y Meow Classic + */
+    body.theme-classic-plus {
+      --bg: #0b0c10;
+      --card-bg: rgba(31, 40, 51, 0.75);
+      --card-border: rgba(102, 252, 241, 0.4);
+      --accent: #66fcf1;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.75);
+      --audio-spec-color: #66fcf1;
+    }
+
     body.theme-cyberpunk {
       --bg: #05050a;
       --card-bg: rgba(18, 18, 31, 0.75);
@@ -154,6 +164,7 @@
       margin: 4px 0;
       flex-shrink: 1;
       min-height: 0;
+      position: relative;
     }
 
     .cover-art {
@@ -167,6 +178,25 @@
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.2);
       flex-shrink: 0;
+      z-index: 2;
+    }
+
+    /* Canvas del Visualizador Dinámico (Oculto por defecto, se activa en Classic +) */
+    .visualizer-canvas {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1;
+      display: none;
+      opacity: 0.85;
+    }
+
+    body.theme-classic-plus .visualizer-canvas {
+      display: block;
     }
 
     .track-info {
@@ -234,7 +264,6 @@
       flex-shrink: 0;
     }
 
-    /* Filas de controles y selector de temas */
     .controls-row {
       display: flex;
       gap: 8px;
@@ -270,7 +299,7 @@
       outline: none;
       text-align: right;
       cursor: pointer;
-      max-width: 95px;
+      max-width: 105px;
     }
 
     .eq-select option, .theme-select option {
@@ -592,6 +621,7 @@
     </div>
 
     <div class="cover-container">
+      <canvas id="visualizerCanvas" class="visualizer-canvas"></canvas>
       <img class="cover-art" id="cover" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>" alt="Cover">
     </div>
 
@@ -633,6 +663,7 @@
         <span class="control-label">Tema</span>
         <select id="themeSelect" class="theme-select">
           <option value="classic">Meow Classic</option>
+          <option value="classic-plus">Meow Classic +</option>
           <option value="cyberpunk">Cyberpunk Neon</option>
           <option value="gold">Dark Gold</option>
         </select>
@@ -726,6 +757,9 @@
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
 
+    const canvas = document.getElementById('visualizerCanvas');
+    const canvasCtx = canvas.getContext('2d');
+
     let playlist = [];
     let currentIndex = 0;
     let currentObjectUrl = null;
@@ -736,19 +770,22 @@
 
     let audioCtx = null;
     let trackSource = null;
+    let analyser = null;
     let eqFilters = [];
     let dolbyFilter = null;
     let dolbyGain = null;
+    let animationId = null;
 
     // --- LÓGICA DE TEMAS ---
     function applyTheme(themeName) {
-      document.body.classList.remove('theme-cyberpunk', 'theme-gold');
-      if (themeName === 'cyberpunk') {
+      document.body.classList.remove('theme-classic-plus', 'theme-cyberpunk', 'theme-gold');
+      if (themeName === 'classic-plus') {
+        document.body.classList.add('theme-classic-plus');
+      } else if (themeName === 'cyberpunk') {
         document.body.classList.add('theme-cyberpunk');
       } else if (themeName === 'gold') {
         document.body.classList.add('theme-gold');
       }
-      // Si es 'classic', se queda limpio usando el tema base "Meow Classic"
       localStorage.setItem('meow_selected_theme', themeName);
     }
 
@@ -756,7 +793,6 @@
       applyTheme(e.target.value);
     });
 
-    // Cargar tema guardado previamente (o Meow Classic por defecto)
     const savedTheme = localStorage.getItem('meow_selected_theme') || 'classic';
     themeSelect.value = savedTheme;
     applyTheme(savedTheme);
@@ -778,6 +814,9 @@
           const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
           audioCtx = new AudioCtxClass();
           trackSource = audioCtx.createMediaElementSource(audio);
+
+          analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 64; // Cantidad de barras/puntos para la animación
 
           eqFilters = FREQUENCIES.map((freq, i) => {
             const filter = audioCtx.createBiquadFilter();
@@ -804,15 +843,69 @@
           
           eqFilters[eqFilters.length - 1].connect(dolbyFilter);
           dolbyFilter.connect(dolbyGain);
-          dolbyGain.connect(audioCtx.destination);
+          dolbyGain.connect(analyser);
+          analyser.connect(audioCtx.destination);
+
+          startVisualizer();
         } catch (e) {
           console.warn("WebAudio no disponible");
         }
       }
     }
 
+    function startVisualizer() {
+      if (!canvas || !analyser) return;
+      canvas.width = 220;
+      canvas.height = 220;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      function draw() {
+        animationId = requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(dataArray);
+
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Si estamos usando el tema Classic +, dibujamos un anillo de ondas animado alrededor de la portada
+        if (document.body.classList.contains('theme-classic-plus')) {
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2;
+          const radius = 100;
+
+          canvasCtx.save();
+          canvasCtx.translate(centerX, centerY);
+
+          const bars = 32;
+          const angleStep = (Math.PI * 2) / bars;
+
+          for (let i = 0; i < bars; i++) {
+            const barHeight = (dataArray[i] / 255) * 35;
+            const x1 = Math.cos(i * angleStep) * radius;
+            const y1 = Math.sin(i * angleStep) * radius;
+            const x2 = Math.cos(i * angleStep) * (radius + barHeight);
+            const y2 = Math.sin(i * angleStep) * (radius + barHeight);
+
+            canvasCtx.strokeStyle = '#66fcf1';
+            canvasCtx.lineWidth = 3;
+            canvasCtx.lineCap = 'round';
+
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(x1, y1);
+            canvasCtx.lineTo(x2, y2);
+            canvasCtx.stroke();
+          }
+
+          canvasCtx.restore();
+        }
+      }
+
+      if (animationId) cancelAnimationFrame(animationId);
+      draw();
+    }
+
     function updateAudioEffects() {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked) {
+      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus')) {
         initWebAudio();
         if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
@@ -837,6 +930,13 @@
 
     eqSelect.addEventListener('change', updateAudioEffects);
     dolbyToggle.addEventListener('change', updateAudioEffects);
+
+    themeSelect.addEventListener('change', (e) => {
+      applyTheme(e.target.value);
+      if (e.target.value === 'classic-plus') {
+        initWebAudio();
+      }
+    });
 
     btnToggleQueue.addEventListener('click', () => {
       searchBoxContainer.classList.remove('active');
@@ -1176,7 +1276,7 @@
     }
 
     function startPlayback(url, title, artist, album, cover) {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked) {
+      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus')) {
         initWebAudio();
       }
 
