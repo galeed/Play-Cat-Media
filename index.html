@@ -27,57 +27,69 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-html, body {
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background-color: var(--bg);
-  color: var(--text);
-}
+    html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg);
+    }
 
-/* FONDO BLINDADO A PANTALLA COMPLETA ABSOLUTA */
-.bg-blur {
-  position: fixed;
-  top: -50px;
-  left: -50px;
-  right: -50px;
-  bottom: -50px;
-  width: calc(100vw + 100px);
-  height: calc(100vh + 100px);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: blur(50px) brightness(0.5) saturate(1.4);
-  z-index: -999; /* Lo mandamos al fondo absoluto del DOM */
-  pointer-events: none;
-}
+    body {
+      width: 100vw;
+      height: 100vh;
+      height: -webkit-fill-available;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background-color: transparent;
+      color: var(--text);
+    }
 
+    /* FONDO AGRANDADO PARA CUBRIR NOTCH Y BARRA INFERIOR */
+    .bg-blur {
+      position: fixed;
+      top: -15%;
+      left: -15%;
+      right: -15%;
+      bottom: -15%;
+      width: 130vw;
+      height: 130vh;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(50px) brightness(0.5) saturate(1.4);
+      transform: scale(1.3);
+      transition: background-image 0.6s ease-in-out;
+      z-index: 0;
+      pointer-events: none;
+    }
 
     .player-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(25px) saturate(160%);
-  -webkit-backdrop-filter: blur(25px) saturate(160%);
-  width: calc(100% - 24px);
-  max-width: 380px;
-  height: calc(100vh - 40px);
-  max-height: 650px;
-  padding: 20px;
-  border-radius: 28px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
-              inset 0 1px 1px rgba(255, 255, 255, 0.3);
-  border: 1px solid var(--card-border);
-  text-align: center;
-  z-index: 1;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  overflow: hidden;
-  margin: auto; /* Centrado automático perfecto sin pelear con insets */
-}
-
+      background: var(--card-bg);
+      backdrop-filter: blur(25px) saturate(160%);
+      -webkit-backdrop-filter: blur(25px) saturate(160%);
+      width: calc(100% - 24px);
+      max-width: 380px;
+      max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+      padding: 20px;
+      border-radius: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
+                  inset 0 1px 1px rgba(255, 255, 255, 0.3);
+      border: 1px solid var(--card-border);
+      text-align: center;
+      z-index: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      margin-top: env(safe-area-inset-top);
+      margin-bottom: env(safe-area-inset-bottom);
+    }
 
     .player-header {
       display: flex;
