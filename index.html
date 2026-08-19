@@ -83,15 +83,15 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+        html, body {
       width: 100%;
       height: 100%;
       position: fixed;
       overflow: hidden;
       background-color: var(--bg);
       transition: background-color 0.4s ease;
-      padding: 0;
       margin: 0;
+      padding: 0;
     }
 
     body {
@@ -99,18 +99,20 @@
       align-items: center;
       justify-content: center;
       color: var(--text);
-      padding: 0;
-      margin: 0;
+      /* Ocupamos todo el espacio de la pantalla sin márgenes restrictivos */
+      width: 100vw;
+      height: 100vh;
     }
 
     .bg-blur {
       position: fixed;
-        top: -20px;
-        left: -20px;
-        right: -20px;
-        bottom: -20px;
-        width: calc(100vw + 40px);
-        height: calc(100vh + 40px);
+      /* Forzamos al fondo a rebasar los límites superior e inferior de la pantalla por completo */
+      top: -80px;
+      left: -20px;
+      right: -20px;
+      bottom: -80px;
+      width: calc(100vw + 40px);
+      height: calc(100vh + 160px);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -127,12 +129,12 @@
       width: 100%;
       max-width: 380px;
       height: 100%;
-      max-height: 660px;
-      padding: 18px;
-      border-radius: 28px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
-                  inset 0 1px 1px rgba(255, 255, 255, 0.3);
-      border: 1px solid var(--card-border);
+      max-height: 100vh;
+      /* Aplicamos el área segura de forma interna para que los elementos gráficos no choquen con el notch */
+      padding: calc(12px + env(safe-area-inset-top)) 18px calc(12px + env(safe-area-inset-bottom)) 18px;
+      border-radius: 0; /* Pantalla completa para que fusione perfectamente con los bordes del dispositivo */
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border: none;
       text-align: center;
       z-index: 1;
       position: relative;
