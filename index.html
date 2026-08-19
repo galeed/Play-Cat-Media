@@ -4,9 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
-  <title>Meow Audio APP OFFLINE</title>
+  <title>Reproductor Web OFFLINE</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
     :root {
@@ -19,6 +18,18 @@
       --audio-spec-color: #8ab4f8;
     }
 
+    /* Estilo Meow Lyrics */
+    body.theme-meow-lyrics {
+      --bg: #0f1015;
+      --card-bg: rgba(255, 255, 255, 0.15);
+      --card-border: rgba(255, 255, 255, 0.25);
+      --accent: #ff4757;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.75);
+      --audio-spec-color: #8ab4f8;
+    }
+
+    /* Meow Classic + */
     body.theme-classic-plus {
       --bg: #0b0c10;
       --card-bg: rgba(31, 40, 51, 0.75);
@@ -27,6 +38,17 @@
       --text: #ffffff;
       --text-muted: rgba(255, 255, 255, 0.75);
       --audio-spec-color: #66fcf1;
+    }
+
+    /* Tema Radioactive ☢️ */
+    body.theme-radioactive {
+      --bg: #030804;
+      --card-bg: rgba(10, 30, 15, 0.75);
+      --card-border: rgba(57, 255, 20, 0.5);
+      --accent: #39ff14;
+      --text: #f0fff0;
+      --text-muted: rgba(180, 255, 180, 0.75);
+      --audio-spec-color: #ccff00;
     }
 
     body.theme-cyberpunk {
@@ -74,18 +96,19 @@
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
 
+    /* CORRECCIÓN: Fondo de pantalla completo que cubre los bordes sin espacios */
     .bg-blur {
       position: fixed;
-      top: -20px;
-      left: -20px;
-      right: -20px;
-      bottom: -20px;
-      width: calc(100vw + 40px);
-      height: calc(100vh + 40px);
+      top: -10vh;
+      left: -10vw;
+      right: -10vw;
+      bottom: -10vh;
+      width: 120vw;
+      height: 120vh;
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      filter: blur(40px) brightness(0.5) saturate(1.4);
+      filter: blur(50px) brightness(0.55) saturate(1.5);
       transition: background-image 0.6s ease-in-out;
       z-index: -1;
       pointer-events: none;
@@ -166,26 +189,62 @@
       position: relative;
     }
 
-    /* --- PORTADA AMPLIADA Y CUADRADA --- */
     .cover-art {
       width: 100%;
-      max-width: 235px; /* Aumentado de 200px a 235px para hacerla más grande */
-      aspect-ratio: 1 / 1; /* Mantiene la forma cuadrada perfectamente[cite: 2] */
+      max-width: 250px;
+      aspect-ratio: 1 / 1;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 8px; /* Ligeramente redondeada para mejor estética (puedes cambiarlo a 0px si prefieres los bordes rectos) */
+      border-radius: 12px;
       object-fit: cover;
       display: block;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.2);
       flex-shrink: 0;
       z-index: 2;
+      transition: opacity 0.3s ease;
     }
 
-    /* --- CANVAS DEL VISUALIZADOR AJUSTADO AL NUEVO TAMAÑO --- */
+    .lyrics-container {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 3;
+      backdrop-filter: blur(10px);
+      overflow-y: auto;
+      text-align: center;
+    }
+
+    body.theme-meow-lyrics .lyrics-container {
+      display: flex;
+    }
+
+    body.theme-meow-lyrics .cover-art {
+      opacity: 0.15;
+    }
+
+    .lyrics-text {
+      font-size: 0.8rem;
+      color: var(--text);
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     .visualizer-canvas {
       position: absolute;
-      width: 255px; /* Aumentado proporcionalmente para rodear la nueva portada */
-      height: 255px;
+      width: 220px;
+      height: 220px;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -195,7 +254,8 @@
       opacity: 0.85;
     }
 
-    body.theme-classic-plus .visualizer-canvas {
+    body.theme-classic-plus .visualizer-canvas,
+    body.theme-radioactive .visualizer-canvas {
       display: block;
     }
 
@@ -299,7 +359,7 @@
       outline: none;
       text-align: right;
       cursor: pointer;
-      max-width: 105px;
+      max-width: 120px;
     }
 
     .eq-select option, .theme-select option {
@@ -605,6 +665,92 @@
       font-size: 0.72rem;
       color: var(--text-muted);
     }
+    
+    .meow-modal-fondo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(10, 10, 12, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .meow-modal-tarjeta {
+      background: #1e1e24;
+      color: #f3f4f6;
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 380px;
+      width: 85%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      border: 1px solid #2d2d38;
+    }
+
+    .meow-modal-icono {
+      font-size: 45px;
+      margin-bottom: 12px;
+    }
+
+    .meow-modal-tarjeta h2 {
+      margin: 0 0 14px 0;
+      font-size: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .meow-modal-tarjeta p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #b3b3b3;
+      margin-bottom: 22px;
+    }
+
+    .meow-modal-tarjeta p strong {
+      color: #ffffff;
+    }
+
+    .meow-modal-opcion {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #8e8e93;
+      margin-bottom: 24px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .meow-modal-opcion input {
+      cursor: pointer;
+      accent-color: #3a3a4c;
+      width: 16px;
+      height: 16px;
+    }
+
+    .meow-modal-boton {
+      background: #2a2a35;
+      color: #ffffff;
+      border: 1px solid #444454;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 30px;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s ease;
+    }
+
+    .meow-modal-boton:hover {
+      background: #ffffff;
+      color: #121214;
+      border-color: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -622,6 +768,9 @@
 
     <div class="cover-container">
       <canvas id="visualizerCanvas" class="visualizer-canvas"></canvas>
+      <div class="lyrics-container" id="lyricsContainer">
+        <div class="lyrics-text" id="lyricsText">Sin letra disponible para esta pista.</div>
+      </div>
       <img class="cover-art" id="cover" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>" alt="Cover">
     </div>
 
@@ -650,7 +799,7 @@
       </div>
 
       <div class="control-box">
-        <span class="control-label">Dolby</span>
+        <span class="control-label">Dolby Atmos</span>
         <label class="toggle-switch">
           <input type="checkbox" id="dolbyToggle">
           <span class="slider"></span>
@@ -663,7 +812,9 @@
         <span class="control-label">Tema</span>
         <select id="themeSelect" class="theme-select">
           <option value="classic">Meow Classic</option>
+          <option value="meow-lyrics">Meow Lyrics</option>
           <option value="classic-plus">Meow Classic +</option>
+          <option value="radioactive">Radioactive ☢️</option>
           <option value="cyberpunk">Cyberpunk Neon</option>
           <option value="gold">Dark Gold</option>
         </select>
@@ -716,12 +867,25 @@
       <ul class="playlist-list" id="playlistContainer"></ul>
     </div>
   </div>
+  
+  <div id="meow-aviso-privacidad" class="meow-modal-fondo">
+    <div class="meow-modal-tarjeta">
+      <div class="meow-modal-icono">🐈‍⬛</div>
+      <h2>¡Aviso de privacidad gatuna!</h2>
+      <p>Los archivos de música siempre se ejecutan <strong>localmente en tu dispositivo</strong>. No se envían a ningún servidor externo.</p>
+      
+      <label class="meow-modal-opcion">
+        <input type="checkbox" id="meow-check-no-mostrar"> No volver a mostrar
+      </label>
+      
+      <button class="meow-modal-boton" onclick="meowCerrarAviso()">Entendido</button>
+    </div>
+  </div>
 
   <audio id="audio" preload="auto" playsinline></audio>
 
   <script>
     const DEFAULT_COVER = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>";
-    
     const HI_RES_SVG = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' fill='%23d4af37' rx='8'/><path d='M0 95 Q100 130 200 95 L200 200 L0 200 Z' fill='%23000000'/><text x='100' y='68' font-family='Arial Black, sans-serif' font-weight='900' font-size='56' fill='%23000000' text-anchor='middle'>Hi-Res</text><text x='100' y='165' font-family='Arial, sans-serif' font-weight='900' font-size='42' fill='%23d4af37' text-anchor='middle'>AUDIO</text></svg>`;
 
     const audio = document.getElementById('audio');
@@ -736,6 +900,7 @@
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
     const albumEl = document.getElementById('album');
+    const lyricsTextEl = document.getElementById('lyricsText');
     const audioSpecsEl = document.getElementById('audioSpecs');
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('fileInput');
@@ -764,7 +929,6 @@
     let currentIndex = 0;
     let currentObjectUrl = null;
     let isUserSeeking = false;
-
     let isShuffle = false;
     let repeatMode = 'off';
 
@@ -777,9 +941,13 @@
     let animationId = null;
 
     function applyTheme(themeName) {
-      document.body.classList.remove('theme-classic-plus', 'theme-cyberpunk', 'theme-gold');
-      if (themeName === 'classic-plus') {
+      document.body.classList.remove('theme-meow-lyrics', 'theme-classic-plus', 'theme-radioactive', 'theme-cyberpunk', 'theme-gold');
+      if (themeName === 'meow-lyrics') {
+        document.body.classList.add('theme-meow-lyrics');
+      } else if (themeName === 'classic-plus') {
         document.body.classList.add('theme-classic-plus');
+      } else if (themeName === 'radioactive') {
+        document.body.classList.add('theme-radioactive');
       } else if (themeName === 'cyberpunk') {
         document.body.classList.add('theme-cyberpunk');
       } else if (themeName === 'gold') {
@@ -790,6 +958,9 @@
 
     themeSelect.addEventListener('change', (e) => {
       applyTheme(e.target.value);
+      if (e.target.value === 'classic-plus' || e.target.value === 'radioactive') {
+        initWebAudio();
+      }
     });
 
     const savedTheme = localStorage.getItem('meow_selected_theme') || 'classic';
@@ -852,29 +1023,10 @@
       }
     }
 
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        if (audioCtx) {
-          if (audioCtx.state !== 'running') {
-            audioCtx.resume();
-          }
-        }
-        if (!audio.paused) {
-          audio.play().catch(() => {});
-        }
-      }
-    });
-
-    audio.addEventListener('play', () => {
-      if (audioCtx && audioCtx.state === 'running') {
-        audioCtx.resume();
-      }
-    });
-
     function startVisualizer() {
       if (!canvas || !analyser) return;
-      canvas.width = 255;
-      canvas.height = 255;
+      canvas.width = 220;
+      canvas.height = 220;
 
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
@@ -885,10 +1037,10 @@
 
         canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (document.body.classList.contains('theme-classic-plus')) {
+        if (document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
           const centerX = canvas.width / 2;
           const centerY = canvas.height / 2;
-          const radius = 115;
+          const radius = 100;
 
           canvasCtx.save();
           canvasCtx.translate(centerX, centerY);
@@ -903,7 +1055,7 @@
             const x2 = Math.cos(i * angleStep) * (radius + barHeight);
             const y2 = Math.sin(i * angleStep) * (radius + barHeight);
 
-            canvasCtx.strokeStyle = '#66fcf1';
+            canvasCtx.strokeStyle = document.body.classList.contains('theme-radioactive') ? '#39ff14' : '#66fcf1';
             canvasCtx.lineWidth = 3;
             canvasCtx.lineCap = 'round';
 
@@ -922,9 +1074,9 @@
     }
 
     function updateAudioEffects() {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus')) {
+      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
         initWebAudio();
-        if (audioCtx && audioCtx.state !== 'running') {
+        if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
       }
@@ -947,13 +1099,6 @@
 
     eqSelect.addEventListener('change', updateAudioEffects);
     dolbyToggle.addEventListener('change', updateAudioEffects);
-
-    themeSelect.addEventListener('change', (e) => {
-      applyTheme(e.target.value);
-      if (e.target.value === 'classic-plus') {
-        initWebAudio();
-      }
-    });
 
     btnToggleQueue.addEventListener('click', () => {
       searchBoxContainer.classList.remove('active');
@@ -1062,7 +1207,7 @@
         btnRepeat.classList.add('active');
       } else if (repeatMode === 'all') {
         repeatMode = 'one';
-        btnRepeat.textContent = '🔂';
+        btnRepeat.textContent = '🂂';
         btnRepeat.classList.add('active');
       } else {
         repeatMode = 'off';
@@ -1103,6 +1248,7 @@
             onSuccess: function(tag) {
               const tags = tag.tags;
               let coverUrl = null;
+              let lyricsText = null;
 
               if (tags.picture) {
                 const { data, format } = tags.picture;
@@ -1114,11 +1260,18 @@
                 coverUrl = createCoverBlobUrl(dataUri);
               }
 
+              if (tags.lyrics && tags.lyrics.lyrics) {
+                lyricsText = tags.lyrics.lyrics;
+              } else if (tags.uslt && tags.uslt.lyrics) {
+                lyricsText = tags.uslt.lyrics;
+              }
+
               resolve({
                 title: tags.title || null,
                 artist: tags.artist || null,
                 album: tags.album || null,
-                cover: coverUrl
+                cover: coverUrl,
+                lyrics: lyricsText
               });
             },
             onError: function() {
@@ -1133,7 +1286,6 @@
 
     async function parseBinaryAudioSpecs(file) {
       const ext = file.name.split('.').pop().toLowerCase();
-      
       const buffer = await file.slice(0, 2048 * 1024).arrayBuffer();
       const uint8 = new Uint8Array(buffer);
       const view = new DataView(buffer);
@@ -1152,7 +1304,6 @@
 
         if (flacPos !== -1 && buffer.byteLength >= flacPos + 22) {
           const streamInfoPos = flacPos + 8;
-          
           const b10 = uint8[streamInfoPos + 10];
           const b11 = uint8[streamInfoPos + 11];
           const b12 = uint8[streamInfoPos + 12];
@@ -1239,6 +1390,7 @@
             artist: meta?.artist || "Biblioteca Local",
             album: meta?.album || "",
             cover: meta?.cover || DEFAULT_COVER,
+            lyrics: meta?.lyrics || null,
             specs: specsText
           };
         }));
@@ -1272,6 +1424,7 @@
       albumEl.textContent = track.album;
       
       coverEl.src = track.cover;
+      lyricsTextEl.textContent = track.lyrics ? track.lyrics : `Sin letra disponible para:\n"${track.title}"`;
       
       if (track.cover && track.cover !== DEFAULT_COVER) {
         bgBlur.style.backgroundImage = `url('${track.cover}')`;
@@ -1293,11 +1446,11 @@
     }
 
     function startPlayback(url, title, artist, album, cover) {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus')) {
+      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
         initWebAudio();
       }
 
-      if (audioCtx && audioCtx.state !== 'running') {
+      if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume();
       }
 
@@ -1327,9 +1480,7 @@
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
-          if (audioCtx && audioCtx.state !== 'running') {
-            audioCtx.resume();
-          }
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
           audio.play();
           btnPlay.textContent = '⏸';
         });
@@ -1397,7 +1548,7 @@
     function togglePlay() {
       if (!audio.src) return;
 
-      if (audioCtx && audioCtx.state !== 'running') {
+      if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume();
       }
 
@@ -1468,6 +1619,20 @@
         playNext();
       }
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('meowOcultarAviso') === 'true') {
+        document.getElementById('meow-aviso-privacidad').style.display = 'none';
+      }
+    });
+
+    function meowCerrarAviso() {
+      const checkbox = document.getElementById('meow-check-no-mostrar');
+      if (checkbox.checked) {
+        localStorage.setItem('meowOcultarAviso', 'true');
+      }
+      document.getElementById('meow-aviso-privacidad').style.display = 'none';
+    }
   </script>
 </body>
 </html>
