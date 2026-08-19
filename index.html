@@ -3,14 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable">
   <meta name="apple-mobile-web-app-capable" content="yes">
   
-
-  
   <title>Reproductor Web OFFLINE</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js">
-</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
     :root {
       --bg: #0f1015;
@@ -83,16 +79,15 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-       html, body {
+    html, body {
       width: 100%;
       height: 100%;
+      position: fixed;
+      overflow: hidden;
+      background-color: var(--bg);
+      transition: background-color 0.4s ease;
       margin: 0;
       padding: 0;
-      background-color: var(--bg);
-      overflow: hidden;
-      /* Forzamos que el documento completo abarque hasta el borde superior de la pantalla, incluyendo la zona de la hora/notch */
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
     }
 
     body {
@@ -104,7 +99,6 @@
 
     .bg-blur {
       position: fixed;
-      /* Estiramos el fondo de forma agresiva hacia arriba para que rebase el notch y la barra de hora */
       top: -120px;
       left: -40px;
       right: -40px;
@@ -129,7 +123,7 @@
       height: 100%;
       max-height: 660px;
       padding: 18px;
-      border-radius: 28px; /* Tus bordes redondeados intactos */
+      border-radius: 28px;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
                   inset 0 1px 1px rgba(255, 255, 255, 0.3);
       border: 1px solid var(--card-border);
@@ -142,7 +136,6 @@
       overflow: hidden;
       transition: background 0.4s ease, border-color 0.4s ease;
     }
-
 
     .player-header {
       display: flex;
@@ -161,10 +154,10 @@
     }
 
     .header-actions {
-  display: flex;
-gap: 6px;
+      display: flex;
+      gap: 6px;
+    }
 
-}
     .btn-icon {
       background: rgba(255, 255, 255, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.3);
@@ -211,7 +204,6 @@ gap: 6px;
       transition: opacity 0.3s ease;
     }
 
-    /* Panel de Letras (Meow Lyrics) */
     .lyrics-container {
       position: absolute;
       width: 250px;
@@ -249,7 +241,6 @@ gap: 6px;
       word-break: break-word;
     }
 
-    /* Canvas del Visualizador Dinámico para Classic + y Radioactive */
     .visualizer-canvas {
       position: absolute;
       width: 220px;
@@ -675,95 +666,91 @@ gap: 6px;
       color: var(--text-muted);
     }
     
-/* Fondo oscuro traslúcido */
-  .meow-modal-fondo {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(10, 10, 12, 0.8);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 99999;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
+    .meow-modal-fondo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(10, 10, 12, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
 
-  /* Tarjeta estilo Dark / Player */
-  .meow-modal-tarjeta {
-    background: #1e1e24;
-    color: #f3f4f6;
-    padding: 30px;
-    border-radius: 20px;
-    max-width: 380px;
-    width: 85%;
-    text-align: center;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-    border: 1px solid #2d2d38;
-  }
+    .meow-modal-tarjeta {
+      background: #1e1e24;
+      color: #f3f4f6;
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 380px;
+      width: 85%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      border: 1px solid #2d2d38;
+    }
 
-  .meow-modal-icono {
-    font-size: 45px;
-    margin-bottom: 12px;
-  }
+    .meow-modal-icono {
+      font-size: 45px;
+      margin-bottom: 12px;
+    }
 
-  .meow-modal-tarjeta h2 {
-    margin: 0 0 14px 0;
-    font-size: 20px;
-    letter-spacing: 0.5px;
-  }
+    .meow-modal-tarjeta h2 {
+      margin: 0 0 14px 0;
+      font-size: 20px;
+      letter-spacing: 0.5px;
+    }
 
-  .meow-modal-tarjeta p {
-    font-size: 14px;
-    line-height: 1.6;
-    color: #b3b3b3;
-    margin-bottom: 22px;
-  }
+    .meow-modal-tarjeta p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #b3b3b3;
+      margin-bottom: 22px;
+    }
 
-  .meow-modal-tarjeta p strong {
-    color: #ffffff;
-  }
+    .meow-modal-tarjeta p strong {
+      color: #ffffff;
+    }
 
-  /* Checkbox adaptado */
-  .meow-modal-opcion {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: #8e8e93;
-    margin-bottom: 24px;
-    cursor: pointer;
-    user-select: none;
-  }
+    .meow-modal-opcion {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #8e8e93;
+      margin-bottom: 24px;
+      cursor: pointer;
+      user-select: none;
+    }
 
-  .meow-modal-opcion input {
-    cursor: pointer;
-    accent-color: #3a3a4c; /* Color del check acorde al reproductor */
-    width: 16px;
-    height: 16px;
-  }
+    .meow-modal-opcion input {
+      cursor: pointer;
+      accent-color: #3a3a4c;
+      width: 16px;
+      height: 16px;
+    }
 
-  /* Botón interactivo */
-  .meow-modal-boton {
-    background: #2a2a35;
-    color: #ffffff;
-    border: 1px solid #444454;
-    padding: 12px 20px;
-    font-size: 15px;
-    font-weight: 600;
-    border-radius: 30px;
-    cursor: pointer;
-    width: 100%;
-    transition: all 0.2s ease;
-  }
+    .meow-modal-boton {
+      background: #2a2a35;
+      color: #ffffff;
+      border: 1px solid #444454;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 30px;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s ease;
+    }
 
-  .meow-modal-boton:hover {
-    background: #ffffff;
-    color: #121214;
-    border-color: #ffffff;
-  }
+    .meow-modal-boton:hover {
+      background: #ffffff;
+      color: #121214;
+      border-color: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -772,7 +759,7 @@ gap: 6px;
 
   <div class="player-card">
     <div class="player-header">
-      <span class="header-title">Meow Audio APP 🐈</span>
+      <span class="header-title">Meow Audio APP 🐈🐈</span>
       <div class="header-actions">
         <button class="btn-icon" id="btnToggleSearch" title="Buscar canción">🔍</button>
         <button class="btn-icon" id="btnToggleQueue" title="Cola de reproducción">☰</button>
@@ -881,26 +868,24 @@ gap: 6px;
     </div>
   </div>
   
-  <!-- Estructura del Aviso (Meow Privacy Modal) -->
-<div id="meow-aviso-privacidad" class="meow-modal-fondo">
-  <div class="meow-modal-tarjeta">
-    <div class="meow-modal-icono">🐈‍⬛</div>
-    <h2>¡Aviso de privacidad gatuna!</h2>
-    <p>Los archivos de música siempre se ejecutan <strong>localmente en tu dispositivo</strong>. No se envían a ningún servidor externo.</p>
-    
-    <label class="meow-modal-opcion">
-      <input type="checkbox" id="meow-check-no-mostrar"> No volver a mostrar
-    </label>
-    
-    <button class="meow-modal-boton" onclick="meowCerrarAviso()">Entendido</button>
+  <div id="meow-aviso-privacidad" class="meow-modal-fondo">
+    <div class="meow-modal-tarjeta">
+      <div class="meow-modal-icono">🐈‍⬛</div>
+      <h2>¡Aviso de privacidad gatuna!</h2>
+      <p>Los archivos de música siempre se ejecutan <strong>localmente en tu dispositivo</strong>. No se envían a ningún servidor externo.</p>
+      
+      <label class="meow-modal-opcion">
+        <input type="checkbox" id="meow-check-no-mostrar"> No volver a mostrar
+      </label>
+      
+      <button class="meow-modal-boton" onclick="meowCerrarAviso()">Entendido</button>
+    </div>
   </div>
-</div>
 
-  <audio id="audio" preload="auto" playsinline></audio>
+  <audio id="audio" preload="auto" playsinline crossorigin="anonymous"></audio>
 
   <script>
     const DEFAULT_COVER = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>";
-    
     const HI_RES_SVG = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' fill='%23d4af37' rx='8'/><path d='M0 95 Q100 130 200 95 L200 200 L0 200 Z' fill='%23000000'/><text x='100' y='68' font-family='Arial Black, sans-serif' font-weight='900' font-size='56' fill='%23000000' text-anchor='middle'>Hi-Res</text><text x='100' y='165' font-family='Arial, sans-serif' font-weight='900' font-size='42' fill='%23d4af37' text-anchor='middle'>AUDIO</text></svg>`;
 
     const audio = document.getElementById('audio');
@@ -956,7 +941,13 @@ gap: 6px;
     let dolbyGain = null;
     let animationId = null;
 
-    // --- LÓGICA DE TEMAS ---
+    // --- CORRECCIÓN: Reactivación automática del AudioContext al volver a primer plano ---
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    });
+
     function applyTheme(themeName) {
       document.body.classList.remove('theme-meow-lyrics', 'theme-classic-plus', 'theme-radioactive', 'theme-cyberpunk', 'theme-gold');
       if (themeName === 'meow-lyrics') {
@@ -977,6 +968,9 @@ gap: 6px;
       applyTheme(e.target.value);
       if (e.target.value === 'classic-plus' || e.target.value === 'radioactive') {
         initWebAudio();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
       }
     });
 
@@ -1001,89 +995,6 @@ gap: 6px;
           const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
           audioCtx = new AudioCtxClass();
           trackSource = audioCtx.createMediaElementSource(audio);
-
-// 1. Declaración de variables globales de tu reproductor
-let miAudioElemento = null; 
-
-let miAudioContext = null;  // Tu contexto de Web Audio API
-let fuenteAudio = null;     // El nodo conector
-
-// 2. FUNCIÓN PARA REPRODUCIR LA CANCIÓN LOCAL
-function reproducirCancionLocal(archivoBlob) {
-    // Generar la URL del archivo local subido por el usuario
-    const urlElemento = URL.createObjectURL(archivoBlob);
-
-    if (!miAudioElemento) {
-        miAudioElemento = new Audio();
-        // ESTA LÍNEA ES CRUCIAL: Permite que el ecualizador funcione sin romper el segundo plano móvil
-        miAudioElemento.crossOrigin = "anonymous"; 
-    }
-    
-    miAudioElemento.src = urlElemento;
-
-    // 3. INICIALIZAR EL AUDIO CONTEXT PARA ECUALIZADOR / DOLBY
-    // Solo se debe inicializar una vez tras la primera interacción del usuario
-    if (!miAudioContext) {
-        // Soporte para navegadores antiguos y modernos
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        miAudioContext = new AudioContextClass();
-
-        // Conectar el elemento de audio físico al gráfico de nodos de tu ecualizador
-        fuenteAudio = miAudioContext.createMediaElementSource(miAudioElemento);
-
-        // --- AQUÍ CONECTAS TUS NODOS DE ECUALIZADOR ACTUALES ---
-        // Ejemplo genérico (reemplázalo con tus variables de filtros/Dolby actuales):
-        // fuenteAudio.connect(nodoFiltroEcualizador);
-        // nodoFiltroEcualizador.connect(miAudioContext.destination);
-        
-        // Conexión directa provisional por si necesitas probar:
-        fuenteAudio.connect(miAudioContext.destination);
-    }
-
-    // Asegurar que el contexto se reactive (requisito de navegadores)
-    if (miAudioContext.state === 'suspended') {
-        miAudioContext.resume();
-    }
-
-    miAudioElemento.play()
-        .then(() => {
-            // 4. ACTIVAR LA PANTALLA DE BLOQUEO (MediaSession API)
-            actualizarControlesPantallaBloqueo();
-        })
-        .catch(error => console.error("Error al reproducir:", error));
-}
-
-// 5. CONFIGURACIÓN GLOBLAL PARA PANTALLA DE BLOQUEO (OBLIGATORIO PARA SEGUNDO PLANO)
-function actualizarControlesPantallaBloqueo() {
-    if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-            title: "Canción Local", // Puedes cambiarlo dinámicamente con las variables de tu app
-            artist: "Meow Audio APP 🐈",
-            album: "Reproductor Local",
-            artwork: [{ src: "icono_gato_512.png", sizes: "512x512", type: "image/png" }]
-        });
-
-        // Vincular los botones físicos del celular / audífonos con las funciones de tu App
-        navigator.mediaSession.setActionHandler('play', () => { 
-            if(miAudioContext) miAudioContext.resume();
-            miAudioElemento.play(); 
-        });
-        navigator.mediaSession.setActionHandler('pause', () => { 
-            miAudioElemento.pause(); 
-        });
-        // Si tienes funciones para pasar canciones, añádelas aquí:
-        // navigator.mediaSession.setActionHandler('nexttrack', () => { tuFuncionSiguiente(); });
-        // navigator.mediaSession.setActionHandler('previoustrack', () => { tuFuncionAnterior(); });
-    }
-}
-
-// 6. TRUCO DE PREVENCIÓN: Forzar la reactivación cuando la app vuelve del segundo plano
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && miAudioContext && miAudioContext.state === 'suspended') {
-        miAudioContext.resume();
-    }
-});
-
 
           analyser = audioCtx.createAnalyser();
           analyser.fftSize = 64;
@@ -1155,7 +1066,6 @@ document.addEventListener('visibilitychange', () => {
             const x2 = Math.cos(i * angleStep) * (radius + barHeight);
             const y2 = Math.sin(i * angleStep) * (radius + barHeight);
 
-            // Cambiar color de las ondas según el tema activo
             canvasCtx.strokeStyle = document.body.classList.contains('theme-radioactive') ? '#39ff14' : '#66fcf1';
             canvasCtx.lineWidth = 3;
             canvasCtx.lineCap = 'round';
@@ -1177,12 +1087,13 @@ document.addEventListener('visibilitychange', () => {
     function updateAudioEffects() {
       if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
         initWebAudio();
-        if (audioCtx && audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
       }
 
-      if (audioCtx && eqFilters.length > 0) {
+      if (audioCtx) {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
         const gains = EQ_PRESETS[eqSelect.value] || EQ_PRESETS.flat;
         eqFilters.forEach((filter, index) => {
           filter.gain.setTargetAtTime(gains[index], audioCtx.currentTime, 0.05);
@@ -1308,7 +1219,7 @@ document.addEventListener('visibilitychange', () => {
         btnRepeat.classList.add('active');
       } else if (repeatMode === 'all') {
         repeatMode = 'one';
-        btnRepeat.textContent = '🂂'; // Corregido el icono de repetir uno
+        btnRepeat.textContent = '🂂';
         btnRepeat.classList.add('active');
       } else {
         repeatMode = 'off';
@@ -1387,7 +1298,6 @@ document.addEventListener('visibilitychange', () => {
 
     async function parseBinaryAudioSpecs(file) {
       const ext = file.name.split('.').pop().toLowerCase();
-      
       const buffer = await file.slice(0, 2048 * 1024).arrayBuffer();
       const uint8 = new Uint8Array(buffer);
       const view = new DataView(buffer);
@@ -1406,7 +1316,6 @@ document.addEventListener('visibilitychange', () => {
 
         if (flacPos !== -1 && buffer.byteLength >= flacPos + 22) {
           const streamInfoPos = flacPos + 8;
-          
           const b10 = uint8[streamInfoPos + 10];
           const b11 = uint8[streamInfoPos + 11];
           const b12 = uint8[streamInfoPos + 12];
@@ -1723,8 +1632,6 @@ document.addEventListener('visibilitychange', () => {
       }
     });
     
-    // REGISTRO DEL SERVICE WORKER 
-
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
@@ -1733,22 +1640,19 @@ document.addEventListener('visibilitychange', () => {
       });
     }
     
-  // Verifica el almacenamiento del navegador al cargar la app
-  document.addEventListener('DOMContentLoaded', () => {
-    if (localStorage.getItem('meowOcultarAviso') === 'true') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('meowOcultarAviso') === 'true') {
+        document.getElementById('meow-aviso-privacidad').style.display = 'none';
+      }
+    });
+
+    function meowCerrarAviso() {
+      const checkbox = document.getElementById('meow-check-no-mostrar');
+      if (checkbox.checked) {
+        localStorage.setItem('meowOcultarAviso', 'true');
+      }
       document.getElementById('meow-aviso-privacidad').style.display = 'none';
     }
-  });
-
-  // Gestiona el cierre y guarda la decisión si se marca la casilla
-  function meowCerrarAviso() {
-    const checkbox = document.getElementById('meow-check-no-mostrar');
-    if (checkbox.checked) {
-      localStorage.setItem('meowOcultarAviso', 'true');
-    }
-    document.getElementById('meow-aviso-privacidad').style.display = 'none';
-  }
-    
   </script>
 </body>
 </html>
