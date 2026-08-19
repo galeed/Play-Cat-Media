@@ -996,6 +996,88 @@
           audioCtx = new AudioCtxClass();
           trackSource = audioCtx.createMediaElementSource(audio);
 
+// 1. Declaración de variables globales de tu reproductor
+let miAudioElemento = null; // Tu etiqueta <audio> nativa o new Audio()
+let miAudioContext = null;  // Tu contexto de Web Audio API
+let fuenteAudio = null;     // El nodo conector
+
+// 2. FUNCIÓN PARA REPRODUCIR LA CANCIÓN LOCAL
+function reproducirCancionLocal(archivoBlob) {
+    // Generar la URL del archivo local subido por el usuario
+    const urlElemento = URL.createObjectURL(archivoBlob);
+
+    if (!miAudioElemento) {
+        miAudioElemento = new Audio();
+        // ESTA LÍNEA ES CRUCIAL: Permite que el ecualizador funcione sin romper el segundo plano móvil
+        miAudioElemento.crossOrigin = "anonymous"; 
+    }
+    
+    miAudioElemento.src = urlElemento;
+
+    // 3. INICIALIZAR EL AUDIO CONTEXT PARA ECUALIZADOR / DOLBY
+    // Solo se debe inicializar una vez tras la primera interacción del usuario
+    if (!miAudioContext) {
+        // Soporte para navegadores antiguos y modernos
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        miAudioContext = new AudioContextClass();
+
+        // Conectar el elemento de audio físico al gráfico de nodos de tu ecualizador
+        fuenteAudio = miAudioContext.createMediaElementSource(miAudioElemento);
+
+        // --- AQUÍ CONECTAS TUS NODOS DE ECUALIZADOR ACTUALES ---
+        // Ejemplo genérico (reemplázalo con tus variables de filtros/Dolby actuales):
+        // fuenteAudio.connect(nodoFiltroEcualizador);
+        // nodoFiltroEcualizador.connect(miAudioContext.destination);
+        
+        // Conexión directa provisional por si necesitas probar:
+        fuenteAudio.connect(miAudioContext.destination);
+    }
+
+    // Asegurar que el contexto se reactive (requisito de navegadores)
+    if (miAudioContext.state === 'suspended') {
+        miAudioContext.resume();
+    }
+
+    miAudioElemento.play()
+        .then(() => {
+            // 4. ACTIVAR LA PANTALLA DE BLOQUEO (MediaSession API)
+            actualizarControlesPantallaBloqueo();
+        })
+        .catch(error => console.error("Error al reproducir:", error));
+}
+
+// 5. CONFIGURACIÓN GLOBLAL PARA PANTALLA DE BLOQUEO (OBLIGATORIO PARA SEGUNDO PLANO)
+function actualizarControlesPantallaBloqueo() {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: "Canción Local", // Puedes cambiarlo dinámicamente con las variables de tu app
+            artist: "Meow Audio APP 🐈",
+            album: "Reproductor Local",
+            artwork: [{ src: "icono_gato_512.png", sizes: "512x512", type: "image/png" }]
+        });
+
+        // Vincular los botones físicos del celular / audífonos con las funciones de tu App
+        navigator.mediaSession.setActionHandler('play', () => { 
+            if(miAudioContext) miAudioContext.resume();
+            miAudioElemento.play(); 
+        });
+        navigator.mediaSession.setActionHandler('pause', () => { 
+            miAudioElemento.pause(); 
+        });
+        // Si tienes funciones para pasar canciones, añádelas aquí:
+        // navigator.mediaSession.setActionHandler('nexttrack', () => { tuFuncionSiguiente(); });
+        // navigator.mediaSession.setActionHandler('previoustrack', () => { tuFuncionAnterior(); });
+    }
+}
+
+// 6. TRUCO DE PREVENCIÓN: Forzar la reactivación cuando la app vuelve del segundo plano
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && miAudioContext && miAudioContext.state === 'suspended') {
+        miAudioContext.resume();
+    }
+});
+
+
           analyser = audioCtx.createAnalyser();
           analyser.fftSize = 64;
 
