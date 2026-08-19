@@ -83,33 +83,35 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-           html, body {
-      width: 100%;
+          html {
       height: 100%;
-      position: fixed;
-      overflow: hidden;
       background-color: var(--bg);
-      transition: background-color 0.4s ease;
       margin: 0;
-      padding: 0; /* Aseguramos que no haya padding global que detenga el fondo */
+      padding: 0;
     }
 
     body {
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text);
+      background-color: var(--bg);
+      overflow-x: hidden;
+      position: relative;
     }
 
     .bg-blur {
-      position: fixed;
-      /* Estiramos el fondo de forma agresiva hacia arriba para que rebase el notch y la barra de hora */
-      top: -120px;
-      left: -40px;
-      right: -40px;
-      bottom: -40px;
-      width: calc(100vw + 80px);
-      height: calc(100vh + 160px);
+      position: absolute;
+      /* Forzamos a que cubra desde más arriba de la barra de estado y baje por completo */
+      top: -150px;
+      left: -150px;
+      right: -150px;
+      bottom: -150px;
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
