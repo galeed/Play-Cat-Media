@@ -100,22 +100,21 @@
       align-items: center;
       justify-content: center;
       color: var(--text);
-      position: relative;
     }
 
     .bg-blur {
       position: fixed;
-      /* Extendemos la capa para que rebase por completo la pantalla y la zona del notch (la hora) */
-      top: -30vh;
-      left: -30vw;
-      right: -30vw;
-      bottom: -30vh;
-      width: 160vw;
-      height: 160vh;
+      /* Estiramos el fondo de forma agresiva hacia arriba para que rebase el notch y la barra de hora */
+      top: -120px;
+      left: -40px;
+      right: -40px;
+      bottom: -40px;
+      width: calc(100vw + 80px);
+      height: calc(100vh + 160px);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      filter: blur(50px) brightness(0.45) saturate(1.4);
+      filter: blur(40px) brightness(0.5) saturate(1.4);
       transition: background-image 0.6s ease-in-out;
       z-index: -1;
       pointer-events: none;
