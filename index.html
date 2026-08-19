@@ -7,7 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
   <title>Reproductor Web OFFLINE</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js">
+</script>
   <style>
     :root {
       --bg: #0f1015;
@@ -1642,6 +1643,22 @@
           .catch(err => console.log('Error:', err));
       });
     }
+    
+  // Verifica el almacenamiento del navegador al cargar la app
+  document.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('meowOcultarAviso') === 'true') {
+      document.getElementById('meow-aviso-privacidad').style.display = 'none';
+    }
+  });
+
+  // Gestiona el cierre y guarda la decisión si se marca la casilla
+  function meowCerrarAviso() {
+    const checkbox = document.getElementById('meow-check-no-mostrar');
+    if (checkbox.checked) {
+      localStorage.setItem('meowOcultarAviso', 'true');
+    }
+    document.getElementById('meow-aviso-privacidad').style.display = 'none';
+  }
     
   </script>
 </body>
