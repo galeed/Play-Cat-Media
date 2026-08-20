@@ -1418,6 +1418,29 @@
         audioCtx.resume();
       }
     });
+    
+    // REGISTRO DEL SERVICE WORKER 
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker listo'))
+            .catch(err => console.log('Error:', err));
+        });
+      }
+      // Verifica el almacenamiento del navegador al cargar la app
+      document.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('meowOcultarAviso') === 'true') {
+          document.getElementById('meow-aviso-privacidad').style.display = 'none';
+        }
+      });
+      // Gestiona el cierre y guarda la decisión si se marca la casilla
+      function meowCerrarAviso() {
+        const checkbox = document.getElementById('meow-check-no-mostrar');
+        if (checkbox.checked) {
+          localStorage.setItem('meowOcultarAviso', 'true');
+        }
+        document.getElementById('meow-aviso-privacidad').style.display = 'none';
+      }
   </script>
 </body>
 </html>
