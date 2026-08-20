@@ -4,14 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
-  <title>Reproductor Web OFFLINE</title>
+  <title>Meow Audio App</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
     :root {
       --bg: #0f1015;
-      --card-bg: rgba(255, 255, 255, 0.15);
-      --card-border: rgba(255, 255, 255, 0.25);
+      --card-bg: rgba(255, 255, 255, 0.14);
+      --card-border: rgba(255, 255, 255, 0.22);
       --accent: #ff4757;
       --text: #ffffff;
       --text-muted: rgba(255, 255, 255, 0.75);
@@ -39,21 +40,20 @@
       align-items: center;
       justify-content: center;
       color: var(--text);
-      padding: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
 
+    /* Fondo extendido para cubrir todo el espacio en iOS WebKit */
     .bg-blur {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      width: 100vw;
-      height: 100vh;
+      top: -20px;
+      left: -20px;
+      right: -20px;
+      bottom: -20px;
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      filter: blur(45px) brightness(0.5) saturate(1.4);
+      filter: blur(45px) brightness(0.45) saturate(1.4);
       transition: background-image 0.6s ease-in-out;
       z-index: -1;
       pointer-events: none;
@@ -66,7 +66,7 @@
       width: 100%;
       height: 100%;
       max-width: 410px;
-      padding: 10px 14px;
+      padding: 12px 16px;
       border-radius: 0;
       box-shadow: none;
       border: none;
@@ -81,9 +81,9 @@
 
     @media (min-width: 480px) {
       .player-card {
-        border-radius: 28px;
+        border-radius: 32px;
         height: 94vh;
-        max-height: 820px;
+        max-height: 840px;
         border: 1px solid var(--card-border);
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
       }
@@ -98,11 +98,30 @@
     }
 
     .header-title {
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .header-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      cursor: pointer;
     }
 
     .app-section {
@@ -122,7 +141,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 4px 0;
+      margin: 6px 0;
       flex-shrink: 1;
       min-height: 0;
       position: relative;
@@ -130,30 +149,30 @@
 
     /* Carátula de álbum más grande */
     .cover-art {
-      width: 230px;
-      max-width: 230px;
+      width: 245px;
+      max-width: 245px;
       aspect-ratio: 1 / 1;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
+      border-radius: 18px;
       object-fit: cover;
       display: block;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.25);
       flex-shrink: 0;
       z-index: 2;
     }
 
     .track-info {
-      margin: 4px 0;
+      margin: 6px 0;
       flex-shrink: 0;
       text-align: center;
     }
 
-    /* Título, artista y álbum más grandes */
+    /* Título, artista y álbum ampliados */
     .track-title {
-      font-size: 1.2rem;
+      font-size: 1.35rem;
       font-weight: 700;
-      margin-bottom: 2px;
+      margin-bottom: 3px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -161,7 +180,7 @@
     }
 
     .track-artist {
-      font-size: 0.92rem;
+      font-size: 1rem;
       color: var(--text);
       font-weight: 500;
       white-space: nowrap;
@@ -170,9 +189,9 @@
     }
 
     .track-album {
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       color: var(--text-muted);
-      margin-top: 2px;
+      margin-top: 3px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -183,19 +202,19 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       font-weight: 700;
       letter-spacing: 0.5px;
       color: var(--audio-spec-color);
-      margin: 2px 0;
-      min-height: 14px;
+      margin: 4px 0;
+      min-height: 16px;
       text-transform: uppercase;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
       flex-shrink: 0;
     }
 
     .hires-icon {
-      height: 13px;
+      height: 14px;
       width: auto;
       vertical-align: middle;
       border-radius: 2px;
@@ -203,17 +222,17 @@
     }
 
     .status-badge {
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       color: var(--accent);
-      min-height: 6px;
+      min-height: 8px;
       font-weight: 600;
       flex-shrink: 0;
     }
 
     .controls-row {
       display: flex;
-      gap: 6px;
-      margin-bottom: 4px;
+      gap: 8px;
+      margin-bottom: 6px;
       flex-shrink: 0;
     }
 
@@ -224,13 +243,13 @@
       justify-content: space-between;
       background: rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 7px 12px;
+      padding: 8px 12px;
       border-radius: 12px;
       backdrop-filter: blur(10px);
     }
 
     .control-label {
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       color: var(--text-muted);
       font-weight: 600;
       text-transform: uppercase;
@@ -240,7 +259,7 @@
       background: transparent;
       color: #ffffff;
       border: none;
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 600;
       outline: none;
       text-align: right;
@@ -256,8 +275,8 @@
     .toggle-switch {
       position: relative;
       display: inline-block;
-      width: 32px;
-      height: 16px;
+      width: 34px;
+      height: 18px;
     }
 
     .toggle-switch input {
@@ -278,8 +297,8 @@
     .slider:before {
       position: absolute;
       content: "";
-      height: 12px;
-      width: 12px;
+      height: 14px;
+      width: 14px;
       left: 2px;
       bottom: 2px;
       background-color: white;
@@ -297,7 +316,7 @@
 
     .progress-container {
       width: 100%;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       flex-shrink: 0;
     }
 
@@ -315,8 +334,8 @@
     .seek-bar::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 13px;
-      height: 13px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background: var(--text);
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -326,9 +345,9 @@
     .time-stamps {
       display: flex;
       justify-content: space-between;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       color: var(--text-muted);
-      margin-top: 2px;
+      margin-top: 3px;
     }
 
     .controls {
@@ -336,7 +355,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 10px;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       flex-shrink: 0;
     }
 
@@ -344,7 +363,7 @@
       background: none;
       border: none;
       color: var(--text);
-      font-size: 1.15rem;
+      font-size: 1.2rem;
       cursor: pointer;
       padding: 4px;
       transition: transform 0.1s ease;
@@ -357,18 +376,18 @@
     .btn-play {
       background: var(--text);
       color: #121216;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+      font-size: 1.15rem;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
     }
 
     .btn-sub {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       opacity: 0.5;
       transition: opacity 0.2s, color 0.2s;
     }
@@ -382,7 +401,7 @@
       position: relative;
       display: block;
       width: 100%;
-      height: 36px;
+      height: 38px;
       border-radius: 12px;
       overflow: hidden;
       background: rgba(255, 255, 255, 0.2);
@@ -398,7 +417,7 @@
       align-items: center;
       justify-content: center;
       color: var(--text);
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       font-weight: 600;
       pointer-events: none;
     }
@@ -506,134 +525,9 @@
       color: var(--text-muted);
     }
 
+    /* Oculto por completo la barra de navegación inferior ya que se usan los botones flotantes superiores estilo app nativa */
     .bottom-nav {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.25);
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 10px 4px calc(env(safe-area-inset-bottom, 12px) + 6px) 4px;
-      margin-top: 6px;
-      flex-shrink: 0;
-      border-radius: 16px;
-      backdrop-filter: blur(15px);
-    }
-
-    .nav-item {
-      flex: 1;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      font-size: 0.62rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      cursor: pointer;
-      padding: 2px;
-      transition: color 0.2s, transform 0.1s;
-    }
-
-    .nav-item .nav-icon {
-      font-size: 1.1rem;
-      line-height: 1;
-    }
-
-    .nav-item.active {
-      color: var(--accent);
-    }
-
-    .nav-item:active {
-      transform: scale(0.92);
-    }
-
-    .meow-modal-fondo {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(10, 10, 12, 0.8);
-      backdrop-filter: blur(4px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 99999;
-      font-family: system-ui, -apple-system, sans-serif;
-    }
-
-    .meow-modal-tarjeta {
-      background: #1e1e24;
-      color: #f3f4f6;
-      padding: 30px;
-      border-radius: 20px;
-      max-width: 380px;
-      width: 85%;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-      border: 1px solid #2d2d38;
-    }
-
-    .meow-modal-icono {
-      font-size: 45px;
-      margin-bottom: 12px;
-    }
-
-    .meow-modal-tarjeta h2 {
-      margin: 0 0 14px 0;
-      font-size: 20px;
-      letter-spacing: 0.5px;
-    }
-
-    .meow-modal-tarjeta p {
-      font-size: 14px;
-      line-height: 1.6;
-      color: #b3b3b3;
-      margin-bottom: 22px;
-    }
-
-    .meow-modal-tarjeta p strong {
-      color: #ffffff;
-    }
-
-    .meow-modal-opcion {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      color: #8e8e93;
-      margin-bottom: 24px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .meow-modal-opcion input {
-      cursor: pointer;
-      accent-color: #3a3a4c;
-      width: 16px;
-      height: 16px;
-    }
-
-    .meow-modal-boton {
-      background: #2a2a35;
-      color: #ffffff;
-      border: 1px solid #444454;
-      padding: 12px 20px;
-      font-size: 15px;
-      font-weight: 600;
-      border-radius: 30px;
-      cursor: pointer;
-      width: 100%;
-      transition: all 0.2s ease;
-    }
-
-    .meow-modal-boton:hover {
-      background: #ffffff;
-      color: #121214;
-      border-color: #ffffff;
+      display: none;
     }
   </style>
 </head>
@@ -644,6 +538,10 @@
   <div class="player-card">
     <div class="player-header">
       <span class="header-title">MEOW AUDIO APP 🐈🐈</span>
+      <div class="header-actions">
+        <button class="header-btn" id="navSearchBtn" title="Buscar">🔍</button>
+        <button class="header-btn" id="navQueueBtn" title="Queue">☰</button>
+      </div>
     </div>
 
     <!-- SECCIÓN 1: INICIO -->
@@ -710,6 +608,10 @@
     <div class="app-section" id="sectionQueue">
       <div class="playlist-tools">
         <div class="sort-bar">
+          <span class="sort-label">Cola de reproducción</span>
+          <button class="header-btn" id="backFromQueueBtn" style="width:24px;height:24px;font-size:0.7rem;">✕</button>
+        </div>
+        <div class="sort-bar">
           <span class="sort-label">Ordenar por:</span>
           <select id="sortSelect" class="sort-select">
             <option value="default">Orden original</option>
@@ -725,57 +627,19 @@
     <!-- SECCIÓN 3: BUSCAR -->
     <div class="app-section" id="sectionSearch">
       <div class="playlist-tools">
-        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por título, artista o álbum...">
+        <div class="sort-bar">
+          <span class="sort-label">Buscar canciones</span>
+          <button class="header-btn" id="backFromSearchBtn" style="width:24px;height:24px;font-size:0.7rem;">✕</button>
+        </div>
+        <input type="text" id="searchInput" class="search-input" placeholder="Título, artista o álbum...">
       </div>
       <ul class="playlist-list" id="searchPlaylistContainer"></ul>
-    </div>
-
-    <!-- BARRA DE NAVEGACIÓN INFERIOR -->
-    <nav class="bottom-nav">
-      <button class="nav-item active" data-target="sectionHome">
-        <span class="nav-icon">🏠</span>
-        <span>Inicio</span>
-      </button>
-      <button class="nav-item" data-target="sectionQueue">
-        <span class="nav-icon">☰</span>
-        <span>Queue</span>
-      </button>
-      <button class="nav-item" data-target="sectionSearch">
-        <span class="nav-icon">🔍</span>
-        <span>Buscar</span>
-      </button>
-    </nav>
-  </div>
-  
-  <!-- Aviso de Privacidad -->
-  <div id="meow-aviso-privacidad" class="meow-modal-fondo">
-    <div class="meow-modal-tarjeta">
-      <div class="meow-modal-icono">🐈‍⬛</div>
-      <h2>¡Aviso de privacidad gatuna!</h2>
-      <p>Los archivos de música siempre se ejecutan <strong>localmente en tu dispositivo</strong>. No se envían a ningún servidor externo.</p>
-      
-      <label class="meow-modal-opcion">
-        <input type="checkbox" id="meow-check-no-mostrar"> No volver a mostrar
-      </label>
-      
-      <button class="meow-modal-boton" onclick="meowCerrarAviso()">Entendido</button>
     </div>
   </div>
 
   <audio id="audio" preload="auto" playsinline></audio>
 
   <script>
-    window.meowCerrarAviso = function() {
-      const checkbox = document.getElementById('meow-check-no-mostrar');
-      if (checkbox && checkbox.checked) {
-        localStorage.setItem('meowOcultarAviso', 'true');
-      }
-      const modal = document.getElementById('meow-aviso-privacidad');
-      if (modal) {
-        modal.style.display = 'none';
-      }
-    };
-
     const DEFAULT_COVER = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>";
     const HI_RES_SVG = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' fill='%23d4af37' rx='8'/><path d='M0 95 Q100 130 200 95 L200 200 L0 200 Z' fill='%23000000'/><text x='100' y='68' font-family='Arial Black, sans-serif' font-weight='900' font-size='56' fill='%23000000' text-anchor='middle'>Hi-Res</text><text x='100' y='165' font-family='Arial, sans-serif' font-weight='900' font-size='42' fill='%23d4af37' text-anchor='middle'>AUDIO</text></svg>`;
 
@@ -806,22 +670,31 @@
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
 
-    const navItems = document.querySelectorAll('.bottom-nav .nav-item');
-    const appSections = document.querySelectorAll('.app-section');
+    const sectionHome = document.getElementById('sectionHome');
+    const sectionQueue = document.getElementById('sectionQueue');
+    const sectionSearch = document.getElementById('sectionSearch');
 
-    navItems.forEach(item => {
-      item.addEventListener('click', () => {
-        navItems.forEach(nav => nav.classList.remove('active'));
-        appSections.forEach(sec => sec.classList.remove('active'));
+    document.getElementById('navSearchBtn').addEventListener('click', () => {
+      sectionHome.classList.remove('active');
+      sectionQueue.classList.remove('active');
+      sectionSearch.classList.add('active');
+      setTimeout(() => searchInput.focus(), 50);
+    });
 
-        item.classList.add('active');
-        const targetId = item.getAttribute('data-target');
-        document.getElementById(targetId).classList.add('active');
+    document.getElementById('navQueueBtn').addEventListener('click', () => {
+      sectionHome.classList.remove('active');
+      sectionSearch.classList.remove('active');
+      sectionQueue.classList.add('active');
+    });
 
-        if (targetId === 'sectionSearch') {
-          setTimeout(() => searchInput.focus(), 50);
-        }
-      });
+    document.getElementById('backFromQueueBtn').addEventListener('click', () => {
+      sectionQueue.classList.remove('active');
+      sectionHome.classList.add('active');
+    });
+
+    document.getElementById('backFromSearchBtn').addEventListener('click', () => {
+      sectionSearch.classList.remove('active');
+      sectionHome.classList.add('active');
     });
 
     let playlist = [];
@@ -1361,10 +1234,6 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('meowOcultarAviso') === 'true') {
-        const modal = document.getElementById('meow-aviso-privacidad');
-        if (modal) modal.style.display = 'none';
-      }
       renderPlaylistUI();
       renderSearchUI();
     });
