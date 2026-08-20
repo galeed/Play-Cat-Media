@@ -18,56 +18,6 @@
       --audio-spec-color: #8ab4f8;
     }
 
-    body.theme-meow-lyrics {
-      --bg: #0f1015;
-      --card-bg: rgba(255, 255, 255, 0.15);
-      --card-border: rgba(255, 255, 255, 0.25);
-      --accent: #ff4757;
-      --text: #ffffff;
-      --text-muted: rgba(255, 255, 255, 0.75);
-      --audio-spec-color: #8ab4f8;
-    }
-
-    body.theme-classic-plus {
-      --bg: #0b0c10;
-      --card-bg: rgba(31, 40, 51, 0.75);
-      --card-border: rgba(102, 252, 241, 0.4);
-      --accent: #66fcf1;
-      --text: #ffffff;
-      --text-muted: rgba(255, 255, 255, 0.75);
-      --audio-spec-color: #66fcf1;
-    }
-
-    body.theme-radioactive {
-      --bg: #030804;
-      --card-bg: rgba(10, 30, 15, 0.75);
-      --card-border: rgba(57, 255, 20, 0.5);
-      --accent: #39ff14;
-      --text: #f0fff0;
-      --text-muted: rgba(180, 255, 180, 0.75);
-      --audio-spec-color: #ccff00;
-    }
-
-    body.theme-cyberpunk {
-      --bg: #05050a;
-      --card-bg: rgba(18, 18, 31, 0.75);
-      --card-border: rgba(244, 63, 94, 0.4);
-      --accent: #f43f5e;
-      --text: #ffffff;
-      --text-muted: rgba(255, 255, 255, 0.7);
-      --audio-spec-color: #f43f5e;
-    }
-
-    body.theme-gold {
-      --bg: #121212;
-      --card-bg: rgba(30, 30, 30, 0.75);
-      --card-border: rgba(212, 175, 55, 0.4);
-      --accent: #d4af37;
-      --text: #fefefe;
-      --text-muted: rgba(255, 255, 255, 0.7);
-      --audio-spec-color: #d4af37;
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
@@ -82,7 +32,6 @@
       position: fixed;
       overflow: hidden;
       background-color: var(--bg);
-      transition: background-color 0.4s ease;
     }
 
     body {
@@ -128,7 +77,6 @@
       flex-direction: column;
       justify-content: space-between;
       overflow: hidden;
-      transition: background 0.4s ease, border-color 0.4s ease;
     }
 
     @media (min-width: 480px) {
@@ -174,84 +122,38 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 2px 0;
+      margin: 4px 0;
       flex-shrink: 1;
       min-height: 0;
       position: relative;
     }
 
+    /* Carátula de álbum más grande */
     .cover-art {
-      width: 200px;
-      max-width: 200px;
+      width: 230px;
+      max-width: 230px;
       aspect-ratio: 1 / 1;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 14px;
+      border-radius: 16px;
       object-fit: cover;
       display: block;
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
       border: 1px solid rgba(255, 255, 255, 0.2);
       flex-shrink: 0;
       z-index: 2;
-      transition: opacity 0.3s ease;
-    }
-
-    .lyrics-container {
-      position: absolute;
-      width: 200px;
-      height: 200px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 14px;
-      padding: 12px;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 3;
-      backdrop-filter: blur(10px);
-      overflow-y: auto;
-      text-align: center;
-    }
-
-    body.theme-meow-lyrics .lyrics-container {
-      display: flex;
-    }
-
-    body.theme-meow-lyrics .cover-art {
-      opacity: 0.15;
-    }
-
-    .visualizer-canvas {
-      position: absolute;
-      width: 190px;
-      height: 190px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      z-index: 1;
-      display: none;
-      opacity: 0.85;
-    }
-
-    body.theme-classic-plus .visualizer-canvas,
-    body.theme-radioactive .visualizer-canvas {
-      display: block;
     }
 
     .track-info {
-      margin: 2px 0;
+      margin: 4px 0;
       flex-shrink: 0;
       text-align: center;
     }
 
+    /* Título, artista y álbum más grandes */
     .track-title {
-      font-size: 1.05rem;
+      font-size: 1.2rem;
       font-weight: 700;
-      margin-bottom: 1px;
+      margin-bottom: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -259,7 +161,7 @@
     }
 
     .track-artist {
-      font-size: 0.8rem;
+      font-size: 0.92rem;
       color: var(--text);
       font-weight: 500;
       white-space: nowrap;
@@ -268,9 +170,9 @@
     }
 
     .track-album {
-      font-size: 0.7rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
-      margin-top: 1px;
+      margin-top: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -311,7 +213,7 @@
     .controls-row {
       display: flex;
       gap: 6px;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
       flex-shrink: 0;
     }
 
@@ -322,7 +224,7 @@
       justify-content: space-between;
       background: rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 5px 10px;
+      padding: 7px 12px;
       border-radius: 12px;
       backdrop-filter: blur(10px);
     }
@@ -334,7 +236,7 @@
       text-transform: uppercase;
     }
 
-    .eq-select, .theme-select {
+    .eq-select {
       background: transparent;
       color: #ffffff;
       border: none;
@@ -346,7 +248,7 @@
       max-width: 120px;
     }
 
-    .eq-select option, .theme-select option {
+    .eq-select option {
       background: #1c1c24;
       color: #ffffff;
     }
@@ -395,7 +297,7 @@
 
     .progress-container {
       width: 100%;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
       flex-shrink: 0;
     }
 
@@ -434,7 +336,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 10px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       flex-shrink: 0;
     }
 
@@ -480,7 +382,7 @@
       position: relative;
       display: block;
       width: 100%;
-      height: 34px;
+      height: 36px;
       border-radius: 12px;
       overflow: hidden;
       background: rgba(255, 255, 255, 0.2);
@@ -604,7 +506,6 @@
       color: var(--text-muted);
     }
 
-    /* BARRA DE NAVEGACIÓN INFERIOR PERFECTAMENTE CENTRADA */
     .bottom-nav {
       display: flex;
       justify-content: space-around;
@@ -748,10 +649,6 @@
     <!-- SECCIÓN 1: INICIO -->
     <div class="app-section active" id="sectionHome">
       <div class="cover-container">
-        <canvas id="visualizerCanvas" class="visualizer-canvas"></canvas>
-        <div class="lyrics-container" id="lyricsContainer">
-          <div class="lyrics-text" id="lyricsText">Sin letra disponible para esta pista.</div>
-        </div>
         <img class="cover-art" id="cover" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>" alt="Cover">
       </div>
 
@@ -784,20 +681,6 @@
             <input type="checkbox" id="dolbyToggle">
             <span class="slider"></span>
           </label>
-        </div>
-      </div>
-
-      <div class="controls-row">
-        <div class="control-box" style="flex: 1;">
-          <span class="control-label">Tema</span>
-          <select id="themeSelect" class="theme-select">
-            <option value="classic">Meow Classic</option>
-            <option value="meow-lyrics">Meow Lyrics</option>
-            <option value="classic-plus">Meow Classic +</option>
-            <option value="radioactive">Radioactive ☢️</option>
-            <option value="cyberpunk">Cyberpunk Neon</option>
-            <option value="gold">Dark Gold</option>
-          </select>
         </div>
       </div>
 
@@ -908,13 +791,11 @@
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
     const albumEl = document.getElementById('album');
-    const lyricsTextEl = document.getElementById('lyricsText');
     const audioSpecsEl = document.getElementById('audioSpecs');
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('fileInput');
     const eqSelect = document.getElementById('eqSelect');
     const dolbyToggle = document.getElementById('dolbyToggle');
-    const themeSelect = document.getElementById('themeSelect');
 
     const seekBar = document.getElementById('seekBar');
     const currentTimeEl = document.getElementById('currentTime');
@@ -924,9 +805,6 @@
     const searchPlaylistContainer = document.getElementById('searchPlaylistContainer');
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
-
-    const canvas = document.getElementById('visualizerCanvas');
-    const canvasCtx = canvas.getContext('2d');
 
     const navItems = document.querySelectorAll('.bottom-nav .nav-item');
     const appSections = document.querySelectorAll('.app-section');
@@ -959,28 +837,6 @@
     let eqFilters = [];
     let dolbyFilter = null;
     let dolbyGain = null;
-    let animationId = null;
-
-    function applyTheme(themeName) {
-      document.body.classList.remove('theme-meow-lyrics', 'theme-classic-plus', 'theme-radioactive', 'theme-cyberpunk', 'theme-gold');
-      if (themeName === 'meow-lyrics') document.body.classList.add('theme-meow-lyrics');
-      else if (themeName === 'classic-plus') document.body.classList.add('theme-classic-plus');
-      else if (themeName === 'radioactive') document.body.classList.add('theme-radioactive');
-      else if (themeName === 'cyberpunk') document.body.classList.add('theme-cyberpunk');
-      else if (themeName === 'gold') document.body.classList.add('theme-gold');
-      localStorage.setItem('meow_selected_theme', themeName);
-    }
-
-    themeSelect.addEventListener('change', (e) => {
-      applyTheme(e.target.value);
-      if (e.target.value === 'classic-plus' || e.target.value === 'radioactive') {
-        initWebAudio();
-      }
-    });
-
-    const savedTheme = localStorage.getItem('meow_selected_theme') || 'classic';
-    themeSelect.value = savedTheme;
-    applyTheme(savedTheme);
 
     const FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
     const EQ_PRESETS = {
@@ -1030,65 +886,14 @@
           dolbyFilter.connect(dolbyGain);
           dolbyGain.connect(analyser);
           analyser.connect(audioCtx.destination);
-
-          startVisualizer();
         } catch (e) {
           console.warn("WebAudio no disponible");
         }
       }
     }
 
-    function startVisualizer() {
-      if (!canvas || !analyser) return;
-      canvas.width = 190;
-      canvas.height = 190;
-
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-
-      function draw() {
-        animationId = requestAnimationFrame(draw);
-        analyser.getByteFrequencyData(dataArray);
-
-        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
-          const centerX = canvas.width / 2;
-          const centerY = canvas.height / 2;
-          const radius = 80;
-
-          canvasCtx.save();
-          canvasCtx.translate(centerX, centerY);
-
-          const bars = 32;
-          const angleStep = (Math.PI * 2) / bars;
-
-          for (let i = 0; i < bars; i++) {
-            const barHeight = (dataArray[i] / 255) * 25;
-            const x1 = Math.cos(i * angleStep) * radius;
-            const y1 = Math.sin(i * angleStep) * radius;
-            const x2 = Math.cos(i * angleStep) * (radius + barHeight);
-            const y2 = Math.sin(i * angleStep) * (radius + barHeight);
-
-            canvasCtx.strokeStyle = document.body.classList.contains('theme-radioactive') ? '#39ff14' : '#66fcf1';
-            canvasCtx.lineWidth = 3;
-            canvasCtx.lineCap = 'round';
-
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(x1, y1);
-            canvasCtx.lineTo(x2, y2);
-            canvasCtx.stroke();
-          }
-          canvasCtx.restore();
-        }
-      }
-
-      if (animationId) cancelAnimationFrame(animationId);
-      draw();
-    }
-
     function updateAudioEffects() {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
+      if (eqSelect.value !== 'flat' || dolbyToggle.checked) {
         initWebAudio();
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       }
@@ -1262,7 +1067,6 @@
             onSuccess: function(tag) {
               const tags = tag.tags;
               let coverUrl = null;
-              let lyricsText = null;
 
               if (tags.picture) {
                 const { data, format } = tags.picture;
@@ -1274,18 +1078,11 @@
                 coverUrl = createCoverBlobUrl(dataUri);
               }
 
-              if (tags.lyrics && tags.lyrics.lyrics) {
-                lyricsText = tags.lyrics.lyrics;
-              } else if (tags.uslt && tags.uslt.lyrics) {
-                lyricsText = tags.uslt.lyrics;
-              }
-
               resolve({
                 title: tags.title || null,
                 artist: tags.artist || null,
                 album: tags.album || null,
-                cover: coverUrl,
-                lyrics: lyricsText
+                cover: coverUrl
               });
             },
             onError: function() { resolve(null); }
@@ -1381,7 +1178,6 @@
             artist: meta?.artist || "Biblioteca Local",
             album: meta?.album || "",
             cover: meta?.cover || DEFAULT_COVER,
-            lyrics: meta?.lyrics || null,
             specs: specsText
           };
         }));
@@ -1413,7 +1209,6 @@
       artistEl.textContent = track.artist;
       albumEl.textContent = track.album;
       coverEl.src = track.cover;
-      lyricsTextEl.textContent = track.lyrics ? track.lyrics : `Sin letra disponible para:\n"${track.title}"`;
       
       if (track.cover && track.cover !== DEFAULT_COVER) {
         bgBlur.style.backgroundImage = `url('${track.cover}')`;
@@ -1436,7 +1231,7 @@
     }
 
     function startPlayback(url, title, artist, album, cover) {
-      if (eqSelect.value !== 'flat' || dolbyToggle.checked || document.body.classList.contains('theme-classic-plus') || document.body.classList.contains('theme-radioactive')) {
+      if (eqSelect.value !== 'flat' || dolbyToggle.checked) {
         initWebAudio();
       }
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
