@@ -19,7 +19,6 @@
       --audio-spec-color: #8ab4f8;
     }
 
-    /* Temas Secundarios y Meow Classic + */
     body.theme-classic-plus {
       --bg: #0b0c10;
       --card-bg: rgba(31, 40, 51, 0.75);
@@ -72,7 +71,8 @@
       align-items: center;
       justify-content: center;
       color: var(--text);
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      /* Se extiende hacia abajo cubriendo el área de la barra inferior del iPhone */
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
     }
 
     .bg-blur {
@@ -99,9 +99,10 @@
       width: 100%;
       max-width: 380px;
       height: 100%;
-      max-height: 660px;
-      padding: 18px;
-      border-radius: 28px;
+      /* Altura maximizada y padding inferior extendido para albergar los iconos en la franja negra inferior */
+      max-height: calc(100vh - env(safe-area-inset-top));
+      padding: 16px 18px calc(env(safe-area-inset-bottom, 24px) + 10px) 18px;
+      border-radius: 28px 28px 0 0;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
                   inset 0 1px 1px rgba(255, 255, 255, 0.3);
       border: 1px solid var(--card-border);
@@ -119,7 +120,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       flex-shrink: 0;
     }
 
@@ -131,37 +132,12 @@
       color: var(--text-muted);
     }
 
-    .header-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    .btn-icon {
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: var(--text);
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 1rem;
-      backdrop-filter: blur(10px);
-      transition: background 0.2s, transform 0.1s;
-    }
-
-    .btn-icon:active {
-      transform: scale(0.92);
-    }
-
     .cover-container {
       width: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 4px 0;
+      margin: 2px 0;
       flex-shrink: 1;
       min-height: 0;
       position: relative;
@@ -169,7 +145,7 @@
 
     .cover-art {
       width: 100%;
-      max-width: 200px;
+      max-width: 175px;
       aspect-ratio: 1 / 1;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 0px;
@@ -183,8 +159,8 @@
 
     .visualizer-canvas {
       position: absolute;
-      width: 220px;
-      height: 220px;
+      width: 195px;
+      height: 195px;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -204,7 +180,7 @@
     }
 
     .track-title {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 700;
       margin-bottom: 2px;
       white-space: nowrap;
@@ -214,7 +190,7 @@
     }
 
     .track-artist {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
       white-space: nowrap;
       overflow: hidden;
@@ -222,7 +198,7 @@
     }
 
     .track-album {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
       margin-top: 1px;
       opacity: 0.8;
@@ -236,11 +212,11 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
       letter-spacing: 0.5px;
       color: var(--audio-spec-color);
-      margin: 2px 0 6px 0;
+      margin: 2px 0 4px 0;
       min-height: 16px;
       text-transform: uppercase;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
@@ -248,7 +224,7 @@
     }
 
     .hires-icon {
-      height: 14px;
+      height: 13px;
       width: auto;
       vertical-align: middle;
       border-radius: 2px;
@@ -256,17 +232,17 @@
     }
 
     .status-badge {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--accent);
-      min-height: 12px;
+      min-height: 10px;
       font-weight: 600;
       flex-shrink: 0;
     }
 
     .controls-row {
       display: flex;
-      gap: 8px;
-      margin-bottom: 6px;
+      gap: 6px;
+      margin-bottom: 4px;
       flex-shrink: 0;
     }
 
@@ -277,13 +253,13 @@
       justify-content: space-between;
       background: rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 6px 10px;
-      border-radius: 12px;
+      padding: 5px 10px;
+      border-radius: 10px;
       backdrop-filter: blur(10px);
     }
 
     .control-label {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       color: var(--text-muted);
       font-weight: 600;
       text-transform: uppercase;
@@ -293,7 +269,7 @@
       background: transparent;
       color: #ffffff;
       border: none;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 600;
       outline: none;
       text-align: right;
@@ -309,8 +285,8 @@
     .toggle-switch {
       position: relative;
       display: inline-block;
-      width: 32px;
-      height: 16px;
+      width: 30px;
+      height: 15px;
     }
 
     .toggle-switch input {
@@ -331,8 +307,8 @@
     .slider:before {
       position: absolute;
       content: "";
-      height: 12px;
-      width: 12px;
+      height: 11px;
+      width: 11px;
       left: 2px;
       bottom: 2px;
       background-color: white;
@@ -345,12 +321,12 @@
     }
 
     input:checked + .slider:before {
-      transform: translateX(16px);
+      transform: translateX(15px);
     }
 
     .progress-container {
       width: 100%;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       flex-shrink: 0;
     }
 
@@ -358,8 +334,8 @@
       width: 100%;
       -webkit-appearance: none;
       appearance: none;
-      height: 5px;
-      border-radius: 3px;
+      height: 4px;
+      border-radius: 2px;
       background: rgba(255, 255, 255, 0.25);
       outline: none;
       cursor: pointer;
@@ -368,28 +344,28 @@
     .seek-bar::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background: var(--text);
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
       cursor: pointer;
     }
 
     .time-stamps {
       display: flex;
       justify-content: space-between;
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       color: var(--text-muted);
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     .controls {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 6px;
-      margin-bottom: 6px;
+      padding: 0 4px;
+      margin-bottom: 4px;
       flex-shrink: 0;
     }
 
@@ -397,9 +373,9 @@
       background: none;
       border: none;
       color: var(--text);
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       cursor: pointer;
-      padding: 6px;
+      padding: 4px;
       transition: transform 0.1s ease;
     }
 
@@ -410,18 +386,18 @@
     .btn-play {
       background: var(--text);
       color: #121216;
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      font-size: 1.2rem;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
     }
 
     .btn-sub {
-      font-size: 1rem;
+      font-size: 0.95rem;
       opacity: 0.5;
       transition: opacity 0.2s, color 0.2s;
     }
@@ -431,53 +407,18 @@
       color: var(--accent);
     }
 
-    /* Franja inferior integrada para los 3 iconos de navegación */
-    .bottom-nav-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      background: rgba(0, 0, 0, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 14px;
-      padding: 6px 12px;
-      margin-top: 4px;
-      flex-shrink: 0;
-      backdrop-filter: blur(12px);
-    }
-
-    .nav-box-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: var(--text);
-      width: 38px;
-      height: 32px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.2s, transform 0.1s, border-color 0.2s;
-    }
-
-    .nav-box-btn:active, .nav-box-btn.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      transform: scale(0.92);
-    }
-
     .file-input-wrapper {
       position: relative;
       display: block;
       width: 100%;
-      height: 36px;
-      border-radius: 12px;
+      height: 34px;
+      border-radius: 10px;
       overflow: hidden;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
       backdrop-filter: blur(10px);
       flex-shrink: 0;
-      margin-top: 6px;
+      margin-bottom: 4px;
     }
 
     .file-input-btn {
@@ -487,7 +428,7 @@
       align-items: center;
       justify-content: center;
       color: var(--text);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       pointer-events: none;
     }
@@ -503,17 +444,52 @@
       z-index: 5;
     }
 
+    /* Franja inferior reubicada exactamente en el área de la barra home del iPhone (la línea roja inferior) */
+    .bottom-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 12px;
+      padding: 4px 10px;
+      margin-top: 2px;
+      flex-shrink: 0;
+      backdrop-filter: blur(14px);
+    }
+
+    .nav-box-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text);
+      width: 36px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s, transform 0.1s, border-color 0.2s;
+    }
+
+    .nav-box-btn:active, .nav-box-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: scale(0.92);
+    }
+
     .playlist-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(18, 18, 24, 0.95);
+      background: rgba(18, 18, 24, 0.96);
       backdrop-filter: blur(30px);
       -webkit-backdrop-filter: blur(30px);
       border-radius: 28px;
-      padding: 18px;
+      padding: 16px;
       display: none;
       flex-direction: column;
       z-index: 10;
@@ -538,7 +514,7 @@
     }
 
     .playlist-title {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 700;
     }
 
@@ -560,7 +536,7 @@
     }
 
     .sort-label {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
       font-weight: 600;
     }
@@ -569,7 +545,7 @@
       background: transparent;
       color: var(--text);
       border: none;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 600;
       outline: none;
       cursor: pointer;
@@ -595,7 +571,7 @@
       padding: 6px 10px;
       border-radius: 8px;
       color: var(--text);
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       outline: none;
     }
 
@@ -628,7 +604,7 @@
     }
 
     .playlist-item-title {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
@@ -637,7 +613,7 @@
     }
 
     .playlist-item-artist {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
     }
   </style>
@@ -649,11 +625,6 @@
   <div class="player-card">
     <div class="player-header">
       <span class="header-title">Meow Audio APP 🐈🐈</span>
-      <div class="header-actions">
-        <!-- Acciones superiores originales intactas por compatibilidad -->
-        <button class="btn-icon" id="btnToggleSearchTop" title="Buscar canción" style="display:none;">🔍</button>
-        <button class="btn-icon" id="btnToggleQueueTop" title="Cola de reproducción" style="display:none;">☰</button>
-      </div>
     </div>
 
     <div class="cover-container">
@@ -722,22 +693,22 @@
       <button class="btn btn-sub" id="btnRepeat">🔁</button>
     </div>
 
-    <!-- Franja inferior con los 3 botones de inicio 🏠, queue ☰ y buscar 🔍 adaptados -->
+    <div class="file-input-wrapper">
+      <div class="file-input-btn">📁 Cargar canciones</div>
+      <input type="file" id="fileInput" class="real-file-input" multiple accept=".mp3,.wav,.ogg,.flac,.m4a,.aac,audio/*">
+    </div>
+
+    <!-- Los 3 iconos y funciones reubicados exactamente en la zona inferior indicada (área de la barra home del iPhone) -->
     <div class="bottom-nav-bar">
       <button class="nav-box-btn active" id="navHome" title="Inicio">🏠</button>
       <button class="nav-box-btn" id="navQueue" title="Cola de reproducción">☰</button>
       <button class="nav-box-btn" id="navSearch" title="Buscar canción">🔍</button>
     </div>
 
-    <div class="file-input-wrapper">
-      <div class="file-input-btn">📁 Cargar canciones</div>
-      <input type="file" id="fileInput" class="real-file-input" multiple accept=".mp3,.wav,.ogg,.flac,.m4a,.aac,audio/*">
-    </div>
-
     <div class="playlist-overlay" id="playlistOverlay">
       <div class="playlist-header">
         <span class="playlist-title" id="overlayTitle">Cola de reproducción</span>
-        <button class="btn-icon" id="btnCloseQueue">✕</button>
+        <button class="btn-icon" id="btnCloseQueue" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); color:#fff; width:32px; height:32px; border-radius:50%; cursor:pointer;">✕</button>
       </div>
       
       <div class="playlist-tools">
@@ -900,8 +871,8 @@
 
     function startVisualizer() {
       if (!canvas || !analyser) return;
-      canvas.width = 220;
-      canvas.height = 220;
+      canvas.width = 195;
+      canvas.height = 195;
 
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
@@ -915,7 +886,7 @@
         if (document.body.classList.contains('theme-classic-plus')) {
           const centerX = canvas.width / 2;
           const centerY = canvas.height / 2;
-          const radius = 100;
+          const radius = 88;
 
           canvasCtx.save();
           canvasCtx.translate(centerX, centerY);
@@ -924,7 +895,7 @@
           const angleStep = (Math.PI * 2) / bars;
 
           for (let i = 0; i < bars; i++) {
-            const barHeight = (dataArray[i] / 255) * 35;
+            const barHeight = (dataArray[i] / 255) * 30;
             const x1 = Math.cos(i * angleStep) * radius;
             const y1 = Math.sin(i * angleStep) * radius;
             const x2 = Math.cos(i * angleStep) * (radius + barHeight);
@@ -982,7 +953,6 @@
       }
     });
 
-    // Control de Navegación Inferior (Inicio 🏠, Queue ☰, Buscar 🔍)
     function updateNavActiveState(activeId) {
       navHome.classList.remove('active');
       navQueue.classList.remove('active');
@@ -1073,7 +1043,7 @@
       });
 
       if (filteredTracks.length === 0) {
-        playlistContainer.innerHTML = '<li style="color:var(--text-muted); font-size:0.82rem; padding:10px; text-align:center;">No se encontraron coincidencias</li>';
+        playlistContainer.innerHTML = '<li style="color:var(--text-muted); font-size:0.8rem; padding:10px; text-align:center;">No se encontraron coincidencias</li>';
         return;
       }
 
@@ -1109,7 +1079,7 @@
         btnRepeat.classList.add('active');
       } else if (repeatMode === 'all') {
         repeatMode = 'one';
-        btnRepeat.textContent = '🔂';
+        btnRepeat.textContent = '🂂'.replace('🂂','🔂');
         btnRepeat.classList.add('active');
       } else {
         repeatMode = 'off';
