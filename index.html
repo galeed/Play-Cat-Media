@@ -181,7 +181,6 @@
       z-index: 2;
     }
 
-    /* Canvas del Visualizador Dinámico (Oculto por defecto, se activa en Classic +) */
     .visualizer-canvas {
       position: absolute;
       width: 220px;
@@ -390,7 +389,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 6px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       flex-shrink: 0;
     }
 
@@ -432,17 +431,53 @@
       color: var(--accent);
     }
 
+    /* Franja inferior integrada para los 3 iconos de navegación */
+    .bottom-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 6px 12px;
+      margin-top: 4px;
+      flex-shrink: 0;
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-box-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text);
+      width: 38px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s, transform 0.1s, border-color 0.2s;
+    }
+
+    .nav-box-btn:active, .nav-box-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: scale(0.92);
+    }
+
     .file-input-wrapper {
       position: relative;
       display: block;
       width: 100%;
-      height: 38px;
+      height: 36px;
       border-radius: 12px;
       overflow: hidden;
       background: rgba(255, 255, 255, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.3);
       backdrop-filter: blur(10px);
       flex-shrink: 0;
+      margin-top: 6px;
     }
 
     .file-input-btn {
@@ -615,8 +650,9 @@
     <div class="player-header">
       <span class="header-title">Meow Audio APP 🐈🐈</span>
       <div class="header-actions">
-        <button class="btn-icon" id="btnToggleSearch" title="Buscar canción">🔍</button>
-        <button class="btn-icon" id="btnToggleQueue" title="Cola de reproducción">☰</button>
+        <!-- Acciones superiores originales intactas por compatibilidad -->
+        <button class="btn-icon" id="btnToggleSearchTop" title="Buscar canción" style="display:none;">🔍</button>
+        <button class="btn-icon" id="btnToggleQueueTop" title="Cola de reproducción" style="display:none;">☰</button>
       </div>
     </div>
 
@@ -686,6 +722,13 @@
       <button class="btn btn-sub" id="btnRepeat">🔁</button>
     </div>
 
+    <!-- Franja inferior con los 3 botones de inicio 🏠, queue ☰ y buscar 🔍 adaptados -->
+    <div class="bottom-nav-bar">
+      <button class="nav-box-btn active" id="navHome" title="Inicio">🏠</button>
+      <button class="nav-box-btn" id="navQueue" title="Cola de reproducción">☰</button>
+      <button class="nav-box-btn" id="navSearch" title="Buscar canción">🔍</button>
+    </div>
+
     <div class="file-input-wrapper">
       <div class="file-input-btn">📁 Cargar canciones</div>
       <input type="file" id="fileInput" class="real-file-input" multiple accept=".mp3,.wav,.ogg,.flac,.m4a,.aac,audio/*">
@@ -693,12 +736,12 @@
 
     <div class="playlist-overlay" id="playlistOverlay">
       <div class="playlist-header">
-        <span class="playlist-title">Cola de reproducción</span>
+        <span class="playlist-title" id="overlayTitle">Cola de reproducción</span>
         <button class="btn-icon" id="btnCloseQueue">✕</button>
       </div>
       
       <div class="playlist-tools">
-        <div class="sort-bar">
+        <div class="sort-bar" id="sortBarContainer">
           <span class="sort-label">Ordenar por:</span>
           <select id="sortSelect" class="sort-select">
             <option value="default">Orden original</option>
@@ -747,13 +790,16 @@
     const currentTimeEl = document.getElementById('currentTime');
     const durationEl = document.getElementById('duration');
 
-    const btnToggleQueue = document.getElementById('btnToggleQueue');
+    const navHome = document.getElementById('navHome');
+    const navQueue = document.getElementById('navQueue');
+    const navSearch = document.getElementById('navSearch');
     const btnCloseQueue = document.getElementById('btnCloseQueue');
     const playlistOverlay = document.getElementById('playlistOverlay');
     const playlistContainer = document.getElementById('playlistContainer');
+    const overlayTitle = document.getElementById('overlayTitle');
 
-    const btnToggleSearch = document.getElementById('btnToggleSearch');
     const searchBoxContainer = document.getElementById('searchBoxContainer');
+    const sortBarContainer = document.getElementById('sortBarContainer');
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
 
@@ -776,7 +822,6 @@
     let dolbyGain = null;
     let animationId = null;
 
-    // --- LÓGICA DE TEMAS ---
     function applyTheme(themeName) {
       document.body.classList.remove('theme-classic-plus', 'theme-cyberpunk', 'theme-gold');
       if (themeName === 'classic-plus') {
@@ -816,7 +861,7 @@
           trackSource = audioCtx.createMediaElementSource(audio);
 
           analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 64; // Cantidad de barras/puntos para la animación
+          analyser.fftSize = 64;
 
           eqFilters = FREQUENCIES.map((freq, i) => {
             const filter = audioCtx.createBiquadFilter();
@@ -867,7 +912,6 @@
 
         canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Si estamos usando el tema Classic +, dibujamos un anillo de ondas animado alrededor de la portada
         if (document.body.classList.contains('theme-classic-plus')) {
           const centerX = canvas.width / 2;
           const centerY = canvas.height / 2;
@@ -938,24 +982,41 @@
       }
     });
 
-    btnToggleQueue.addEventListener('click', () => {
+    // Control de Navegación Inferior (Inicio 🏠, Queue ☰, Buscar 🔍)
+    function updateNavActiveState(activeId) {
+      navHome.classList.remove('active');
+      navQueue.classList.remove('active');
+      navSearch.classList.remove('active');
+      if (activeId) document.getElementById(activeId).classList.add('active');
+    }
+
+    navHome.addEventListener('click', () => {
+      updateNavActiveState('navHome');
+      playlistOverlay.classList.remove('active');
+    });
+
+    navQueue.addEventListener('click', () => {
+      updateNavActiveState('navQueue');
+      overlayTitle.textContent = "Cola de reproducción";
+      sortBarContainer.style.display = 'flex';
       searchBoxContainer.classList.remove('active');
       playlistOverlay.classList.add('active');
+      renderPlaylistUI();
+    });
+
+    navSearch.addEventListener('click', () => {
+      updateNavActiveState('navSearch');
+      overlayTitle.textContent = "Buscar canción";
+      sortBarContainer.style.display = 'none';
+      searchBoxContainer.classList.add('active');
+      playlistOverlay.classList.add('active');
+      setTimeout(() => searchInput.focus(), 50);
+      renderPlaylistUI();
     });
 
     btnCloseQueue.addEventListener('click', () => {
       playlistOverlay.classList.remove('active');
-    });
-
-    btnToggleSearch.addEventListener('click', () => {
-      searchBoxContainer.classList.toggle('active');
-      playlistOverlay.classList.add('active');
-      if (searchBoxContainer.classList.contains('active')) {
-        setTimeout(() => searchInput.focus(), 50);
-      } else {
-        searchInput.value = '';
-        renderPlaylistUI();
-      }
+      updateNavActiveState('navHome');
     });
 
     searchInput.addEventListener('input', () => {
@@ -1000,8 +1061,10 @@
       playlistContainer.innerHTML = '';
       
       const query = searchInput.value.toLowerCase().trim();
+      const isSearching = searchBoxContainer.classList.contains('active');
+
       const filteredTracks = playlist.map((track, originalIndex) => ({ track, originalIndex })).filter(({ track }) => {
-        if (!query) return true;
+        if (!isSearching || !query) return true;
         const titleMatch = (track.title || '').toLowerCase().includes(query);
         const artistMatch = (track.artist || '').toLowerCase().includes(query);
         const albumMatch = (track.album || '').toLowerCase().includes(query);
@@ -1028,6 +1091,7 @@
           currentIndex = originalIndex;
           processAndPlayTrack(currentIndex);
           playlistOverlay.classList.remove('active');
+          updateNavActiveState('navHome');
         });
         playlistContainer.appendChild(li);
       });
