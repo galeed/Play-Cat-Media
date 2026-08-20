@@ -788,6 +788,11 @@
     let dolbyGain = null;
     let animationId = null;
 
+    // Audio silencioso para mantener activo el navegador en segundo plano
+    const silentWav = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+    const keepAliveAudio = new Audio(silentWav);
+    keepAliveAudio.loop = true;
+
     const FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
     const EQ_PRESETS = {
       flat:         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -836,6 +841,13 @@
           dolbyFilter.connect(dolbyGain);
           dolbyGain.connect(analyser);
           analyser.connect(audioCtx.destination);
+          
+          // NUEVO: Forzar reanudación si el OS intenta suspenderlo
+          audioCtx.onstatechange = () => {
+            if (audioCtx.state === 'suspended' && !audio.paused) {
+              audioCtx.resume();
+            }
+          };
         } catch (e) {
           console.warn("WebAudio no disponible");
         }
@@ -1232,6 +1244,7 @@
       setupMediaSession(title, artist, album, cover);
 
       audio.play().then(() => {
+        keepAliveAudio.play().catch(() => {});
         btnPlay.textContent = '⏸';
         updatePositionState();
       }).catch(err => {
@@ -1256,11 +1269,13 @@
         navigator.mediaSession.setActionHandler('play', () => {
           if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
           audio.play();
+          keepAliveAudio.play().catch(() => {});
           btnPlay.textContent = '⏸';
         });
 
         navigator.mediaSession.setActionHandler('pause', () => {
           audio.pause();
+          keepAliveAudio.pause();
           btnPlay.textContent = '▶';
         });
 
@@ -1328,9 +1343,11 @@
 
       if (audio.paused) {
         audio.play();
+        keepAliveAudio.play().catch(() => {}); // Iniciar el keep-alive
         btnPlay.textContent = '⏸';
       } else {
         audio.pause();
+        keepAliveAudio.pause(); // Detener el keep-alive
         btnPlay.textContent = '▶';
       }
     }
@@ -1355,6 +1372,7 @@
 
       if (currentIndex === playlist.length - 1 && repeatMode === 'off' && !isShuffle) {
         audio.pause();
+        keepAliveAudio.pause();
         btnPlay.textContent = '▶';
         return;
       }
@@ -1391,6 +1409,13 @@
         audio.play().catch(console.warn);
       } else {
         playNext();
+      }
+    });
+
+    // NUEVO: Reconectar el audio si la pestaña cambia de visibilidad
+    document.addEventListener("visibilitychange", () => {
+      if (audioCtx && audioCtx.state === 'suspended' && !audio.paused) {
+        audioCtx.resume();
       }
     });
   </script>
