@@ -93,7 +93,7 @@
       padding: 0;
     }
 
-    /* Background expandido cubriendo absolutamente toda la pantalla (incluyendo barra de estado y notch) */
+    /* Background expandido cubriendo absolutamente toda la pantalla */
     .bg-blur {
       position: fixed;
       top: 0;
@@ -881,6 +881,18 @@
   <audio id="audio" preload="auto" playsinline></audio>
 
   <script>
+    // Definición global del cierre del aviso para asegurar que el onclick del HTML funcione perfectamente
+    window.meowCerrarAviso = function() {
+      const checkbox = document.getElementById('meow-check-no-mostrar');
+      if (checkbox && checkbox.checked) {
+        localStorage.setItem('meowOcultarAviso', 'true');
+      }
+      const modal = document.getElementById('meow-aviso-privacidad');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    };
+
     const DEFAULT_COVER = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5'><path d='M9 18V5l12-2v13'/><circle cx='6' cy='18' r='3'/><circle cx='18' cy='16' r='3'/></svg>";
     const HI_RES_SVG = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' fill='%23d4af37' rx='8'/><path d='M0 95 Q100 130 200 95 L200 200 L0 200 Z' fill='%23000000'/><text x='100' y='68' font-family='Arial Black, sans-serif' font-weight='900' font-size='56' fill='%23000000' text-anchor='middle'>Hi-Res</text><text x='100' y='165' font-family='Arial, sans-serif' font-weight='900' font-size='42' fill='%23d4af37' text-anchor='middle'>AUDIO</text></svg>`;
 
@@ -1517,17 +1529,6 @@
       return (currentIndex + 1) % playlist.length;
     }
 
-    fn playNext = function() {
-      if (playlist.length === 0) return;
-      if (currentIndex === playlist.length - 1 && repeatMode === 'off' && !isShuffle) {
-        audio.pause();
-        btnPlay.textContent = '▶';
-        return;
-      }
-      currentIndex = getNextIndex();
-      processAndPlayTrack(currentIndex);
-    }
-
     function playNext() {
       if (playlist.length === 0) return;
       if (currentIndex === playlist.length - 1 && repeatMode === 'off' && !isShuffle) {
@@ -1566,18 +1567,12 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('meowOcultarAviso') === 'true') {
-        document.getElementById('meow-aviso-privacidad').style.display = 'none';
+        const modal = document.getElementById('meow-aviso-privacidad');
+        if (modal) modal.style.display = 'none';
       }
       renderPlaylistUI();
       renderSearchUI();
     });
-
-    function meowCerrarAviso() {
-      if (document.getElementById('meow-check-no-mostrar').checked) {
-        localStorage.setItem('meowOcultarAviso', 'true');
-      }
-      document.getElementById('meow-aviso-privacidad').style.display = 'none';
-    }
   </script>
 </body>
 </html>
