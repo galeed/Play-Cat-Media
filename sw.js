@@ -1,55 +1,30 @@
-const CACHE_NAME = 'michi-app-v1';
-// Lista de todos los archivos estáticos que necesita tu app para funcionar
-const ASSETS_TO_CACHE = [
+self.addEventListener('fetch', (event) => {
+  // Evitar que el Service Worker interfiera con blobs locales de música o peticiones parciales de audio
+  if (event.request.url.startsWith('blob:') || event.request.headers.get('range')) {
+    return; // Deja que el navegador maneje el archivo local de forma nativa
+  }
+
+  // Tu lógica actual de caché para index.html, estilos y temas va aquí abajo...
+});
+
+
+const CACHE_NAME = 'reproductor-unico-v1';
+const ASSETS = [
   './',
-  './index.html',
-  './style.css',
-  './app.js',
-  './icon.png',
-  './manifest.json'
+  'index.html'
 ];
 
-// Instala el SW y guarda los recursos en la caché
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Archivos guardados en caché correctamente');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+// Instalar y guardar el HTML único
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
   );
   self.skipWaiting();
 });
 
-// Elimina cachés antiguas si cambias la versión (ej. 'michi-app-v2')
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-// Intercepta peticiones: intenta red primero; si falla, sirve desde la caché
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Actualiza la caché dinámicamente con la versión más reciente
-        return caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
-        });
-      })
-      .catch(() => {
-        // Si no hay red, entrega el recurso desde la caché local
-        return caches.match(event.request);
-      })
+// Servir el HTML desde la caché si no hay internet
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(response => response || fetch(e.request))
   );
 });
