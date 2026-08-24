@@ -624,7 +624,7 @@
   <div class="app-container">
     <div class="player-card">
       <div class="player-header">
-        <span class="header-title">Meow Audio APP ðð</span>
+        <span class="header-title">Meow Audio APP 🐈🐈</span>
       </div>
 
       <div class="cover-container">
@@ -633,7 +633,7 @@
       </div>
 
       <div class="track-info">
-        <div class="track-title" id="title">Sin reproducciÃ³n</div>
+        <div class="track-title" id="title">Sin reproducción</div>
         <div class="track-artist" id="artist">Selecciona un archivo</div>
         <div class="track-album" id="album"></div>
       </div>
@@ -674,22 +674,22 @@
       </div>
 
       <div class="controls">
-        <button class="btn btn-sub" id="btnShuffle">ð</button>
-        <button class="btn" id="btnPrev">â®</button>
-        <button class="btn btn-play" id="btnPlay">â¶</button>
-        <button class="btn" id="btnNext">â­</button>
-        <button class="btn btn-sub" id="btnRepeat">ð</button>
+        <button class="btn btn-sub" id="btnShuffle">🔀</button>
+        <button class="btn" id="btnPrev">⏮</button>
+        <button class="btn btn-play" id="btnPlay">▶</button>
+        <button class="btn" id="btnNext">⏭</button>
+        <button class="btn btn-sub" id="btnRepeat">🔁</button>
       </div>
 
       <div class="file-input-wrapper">
-        <div class="file-input-btn">ð Cargar canciones</div>
+        <div class="file-input-btn">📁 Cargar canciones</div>
         <input type="file" id="fileInput" class="real-file-input" multiple accept=".mp3,.wav,.ogg,.flac,.m4a,.aac,audio/*">
       </div>
 
       <div class="playlist-overlay" id="playlistOverlay">
         <div class="playlist-header">
-          <span class="playlist-title">Cola de reproducciÃ³n</span>
-          <button class="btn-icon" id="btnCloseQueue">â</button>
+          <span class="playlist-title">Cola de reproducción</span>
+          <button class="btn-icon" id="btnCloseQueue">✕</button>
         </div>
         
         <div class="playlist-tools">
@@ -697,14 +697,14 @@
             <span class="sort-label">Ordenar por:</span>
             <select id="sortSelect" class="sort-select">
               <option value="default">Orden original</option>
-              <option value="title">TÃ­tulo</option>
+              <option value="title">Título</option>
               <option value="artist">Artista</option>
-              <option value="album">Ãlbum</option>
+              <option value="album">Álbum</option>
             </select>
           </div>
 
           <div class="search-box-container" id="searchBoxContainer">
-            <input type="text" id="searchInput" class="search-input" placeholder="Buscar por tÃ­tulo, artista o Ã¡lbum...">
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar por título, artista o álbum...">
           </div>
         </div>
 
@@ -717,18 +717,18 @@
     &nbsp
   
 
-    <!-- RECUADRO INDEPENDIENTE DE NAVEGACIÃN INFERIOR -->
+    <!-- RECUADRO INDEPENDIENTE DE NAVEGACIÓN INFERIOR -->
     <div class="bottom-nav">
       <button class="nav-btn active" id="navHome">
-        <span class="nav-icon">ð </span>
+        <span class="nav-icon">🏠</span>
         <span>Inicio</span>
       </button>
       <button class="nav-btn" id="navQueue">
-        <span class="nav-icon">â°</span>
+        <span class="nav-icon">☰</span>
         <span>Queue</span>
       </button>
       <button class="nav-btn" id="navSearch">
-        <span class="nav-icon">ð</span>
+        <span class="nav-icon">🔍</span>
         <span>Buscar</span>
       </button>
     </div>
@@ -848,7 +848,7 @@
           dolbyGain.connect(analyser);
           analyser.connect(audioCtx.destination);
           
-          // NUEVO: Forzar reanudaciÃ³n si el OS intenta suspenderlo
+          // NUEVO: Forzar reanudación si el OS intenta suspenderlo
           audioCtx.onstatechange = () => {
             if (audioCtx.state === 'suspended' && !audio.paused) {
               audioCtx.resume();
@@ -887,7 +887,7 @@
     eqSelect.addEventListener('change', updateAudioEffects);
     dolbyToggle.addEventListener('change', updateAudioEffects);
 
-    // --- NAVEGACIÃN INFERIOR ---
+    // --- NAVEGACIÓN INFERIOR ---
     function setActiveTab(activeBtn) {
       navHome.classList.remove('active');
       navQueue.classList.remove('active');
@@ -981,9 +981,9 @@
         li.innerHTML = `
           <div>
             <div class="playlist-item-title">${track.title || track.filename}</div>
-            <div class="playlist-item-artist">${track.artist} ${track.album ? 'â¢ ' + track.album : ''}</div>
+            <div class="playlist-item-artist">${track.artist} ${track.album ? '• ' + track.album : ''}</div>
           </div>
-          ${originalIndex === currentIndex ? '<span style="color:var(--accent); font-size:0.8rem;">â¶</span>' : ''}
+          ${originalIndex === currentIndex ? '<span style="color:var(--accent); font-size:0.8rem;">▶</span>' : ''}
         `;
         li.addEventListener('click', () => {
           currentIndex = originalIndex;
@@ -1003,15 +1003,15 @@
     btnRepeat.addEventListener('click', () => {
       if (repeatMode === 'off') {
         repeatMode = 'all';
-        btnRepeat.textContent = 'ð';
+        btnRepeat.textContent = '🔁';
         btnRepeat.classList.add('active');
       } else if (repeatMode === 'all') {
         repeatMode = 'one';
-        btnRepeat.textContent = 'ð';
+        btnRepeat.textContent = '🔂';
         btnRepeat.classList.add('active');
       } else {
         repeatMode = 'off';
-        btnRepeat.textContent = 'ð';
+        btnRepeat.textContent = '🔁';
         btnRepeat.classList.remove('active');
       }
     });
@@ -1251,11 +1251,11 @@
 
       audio.play().then(() => {
         keepAliveAudio.play().catch(() => {});
-        btnPlay.textContent = 'â¸';
+        btnPlay.textContent = '⏸';
         updatePositionState();
       }).catch(err => {
-        console.warn("ReproducciÃ³n diferida:", err);
-        btnPlay.textContent = 'â¶';
+        console.warn("Reproducción diferida:", err);
+        btnPlay.textContent = '▶';
       });
     }
 
@@ -1266,7 +1266,7 @@
           : [];
 
         navigator.mediaSession.metadata = new MediaMetadata({
-          title: title || 'CanciÃ³n',
+          title: title || 'Canción',
           artist: artist || 'Artista',
           album: album || 'Biblioteca',
           artwork: artwork
@@ -1276,13 +1276,13 @@
           if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
           audio.play();
           keepAliveAudio.play().catch(() => {});
-          btnPlay.textContent = 'â¸';
+          btnPlay.textContent = '⏸';
         });
 
         navigator.mediaSession.setActionHandler('pause', () => {
           audio.pause();
           keepAliveAudio.pause();
-          btnPlay.textContent = 'â¶';
+          btnPlay.textContent = '▶';
         });
 
         navigator.mediaSession.setActionHandler('previoustrack', playPrev);
@@ -1350,11 +1350,11 @@
       if (audio.paused) {
         audio.play();
         keepAliveAudio.play().catch(() => {}); // Iniciar el keep-alive
-        btnPlay.textContent = 'â¸';
+        btnPlay.textContent = '⏸';
       } else {
         audio.pause();
         keepAliveAudio.pause(); // Detener el keep-alive
-        btnPlay.textContent = 'â¶';
+        btnPlay.textContent = '▶';
       }
     }
 
@@ -1379,7 +1379,7 @@
       if (currentIndex === playlist.length - 1 && repeatMode === 'off' && !isShuffle) {
         audio.pause();
         keepAliveAudio.pause();
-        btnPlay.textContent = 'â¶';
+        btnPlay.textContent = '▶';
         return;
       }
 
@@ -1418,7 +1418,7 @@
       }
     });
 
-    // NUEVO: Reconectar el audio si la pestaÃ±a cambia de visibilidad
+    // NUEVO: Reconectar el audio si la pestaña cambia de visibilidad
     document.addEventListener("visibilitychange", () => {
       if (audioCtx && audioCtx.state === 'suspended' && !audio.paused) {
         audioCtx.resume();
@@ -1439,7 +1439,7 @@
           document.getElementById('meow-aviso-privacidad').style.display = 'none';
         }
       });
-      // Gestiona el cierre y guarda la decisiÃ³n si se marca la casilla
+      // Gestiona el cierre y guarda la decisión si se marca la casilla
       function meowCerrarAviso() {
         const checkbox = document.getElementById('meow-check-no-mostrar');
         if (checkbox.checked) {
