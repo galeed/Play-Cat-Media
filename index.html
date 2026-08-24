@@ -103,8 +103,9 @@
       flex-shrink: 0;
     }
 
+    /* ENCABEZADO AUMENTADO */
     .header-title {
-      font-size: 0.85rem;
+      font-size: 1rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -122,9 +123,10 @@
       position: relative;
     }
 
+    /* PORTADA Y VISUALIZADOR AUMENTADOS */
     .cover-art {
       width: 100%;
-      max-width: 215px;
+      max-width: 255px;
       aspect-ratio: 1 / 1;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 0px;
@@ -138,8 +140,8 @@
 
     .visualizer-canvas {
       position: absolute;
-      width: 230px;
-      height: 230px;
+      width: 270px;
+      height: 270px;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -154,8 +156,9 @@
       flex-shrink: 0;
     }
 
+    /* TEXTOS DE INFORMACIÓN DE PISTA AUMENTADOS */
     .track-title {
-      font-size: 1.25rem;
+      font-size: 1.45rem;
       font-weight: 700;
       margin-bottom: 3px;
       white-space: nowrap;
@@ -165,7 +168,7 @@
     }
 
     .track-artist {
-      font-size: 0.92rem;
+      font-size: 1.05rem;
       color: var(--text-muted);
       white-space: nowrap;
       overflow: hidden;
@@ -173,7 +176,7 @@
     }
 
     .track-album {
-      font-size: 0.8rem;
+      font-size: 0.9rem;
       color: var(--text-muted);
       margin-top: 2px;
       opacity: 0.8;
@@ -187,19 +190,19 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      font-size: 0.72rem;
+      font-size: 0.82rem;
       font-weight: 700;
       letter-spacing: 0.5px;
       color: var(--audio-spec-color);
       margin: 2px 0 6px 0;
-      min-height: 16px;
+      min-height: 18px;
       text-transform: uppercase;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
       flex-shrink: 0;
     }
 
     .hires-icon {
-      height: 14px;
+      height: 16px;
       width: auto;
       vertical-align: middle;
       border-radius: 2px;
@@ -335,6 +338,7 @@
       margin-top: 3px;
     }
 
+    /* BOTONES DE CONTROL AUMENTADOS */
     .controls {
       display: flex;
       align-items: center;
@@ -348,7 +352,7 @@
       background: none;
       border: none;
       color: var(--text);
-      font-size: 1.3rem;
+      font-size: 1.5rem;
       cursor: pointer;
       padding: 6px;
       transition: transform 0.1s ease;
@@ -361,18 +365,18 @@
     .btn-play {
       background: var(--text);
       color: #121216;
-      width: 48px;
-      height: 48px;
+      width: 54px;
+      height: 54px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
+      font-size: 1.5rem;
       box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }
 
     .btn-sub {
-      font-size: 1rem;
+      font-size: 1.15rem;
       opacity: 0.5;
       transition: opacity 0.2s, color 0.2s;
     }
@@ -382,11 +386,12 @@
       color: var(--accent);
     }
 
+    /* BOTÓN CARGAR CANCIONES AUMENTADO */
     .file-input-wrapper {
       position: relative;
       display: block;
       width: 100%;
-      height: 38px;
+      height: 42px;
       border-radius: 12px;
       overflow: hidden;
       background: rgba(255, 255, 255, 0.2);
@@ -402,7 +407,7 @@
       align-items: center;
       justify-content: center;
       color: var(--text);
-      font-size: 0.8rem;
+      font-size: 0.9rem;
       font-weight: 600;
       pointer-events: none;
     }
@@ -418,7 +423,6 @@
       z-index: 5;
     }
 
-    /* --- BARRA INFERIOR DESPLAZADA HACIA ABAJO --- */
     .bottom-nav {
       background: var(--card-bg);
       backdrop-filter: blur(25px) saturate(160%);
@@ -618,7 +622,6 @@
 </head>
 <body>
 
-
   <div class="bg-blur" id="bgBlur"></div>
 
   <div class="app-container">
@@ -711,11 +714,6 @@
         <ul class="playlist-list" id="playlistContainer"></ul>
       </div>
     </div>
-    
-    &nbsp
-    &nbsp
-    &nbsp
-  
 
     <!-- RECUADRO INDEPENDIENTE DE NAVEGACIÓN INFERIOR -->
     <div class="bottom-nav">
@@ -794,7 +792,6 @@
     let dolbyGain = null;
     let animationId = null;
 
-    // Audio silencioso para mantener activo el navegador en segundo plano
     const silentWav = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
     const keepAliveAudio = new Audio(silentWav);
     keepAliveAudio.loop = true;
@@ -848,7 +845,6 @@
           dolbyGain.connect(analyser);
           analyser.connect(audioCtx.destination);
           
-          // NUEVO: Forzar reanudación si el OS intenta suspenderlo
           audioCtx.onstatechange = () => {
             if (audioCtx.state === 'suspended' && !audio.paused) {
               audioCtx.resume();
@@ -887,7 +883,6 @@
     eqSelect.addEventListener('change', updateAudioEffects);
     dolbyToggle.addEventListener('change', updateAudioEffects);
 
-    // --- NAVEGACIÓN INFERIOR ---
     function setActiveTab(activeBtn) {
       navHome.classList.remove('active');
       navQueue.classList.remove('active');
@@ -1349,11 +1344,11 @@
 
       if (audio.paused) {
         audio.play();
-        keepAliveAudio.play().catch(() => {}); // Iniciar el keep-alive
+        keepAliveAudio.play().catch(() => {});
         btnPlay.textContent = '⏸';
       } else {
         audio.pause();
-        keepAliveAudio.pause(); // Detener el keep-alive
+        keepAliveAudio.pause();
         btnPlay.textContent = '▶';
       }
     }
@@ -1418,35 +1413,35 @@
       }
     });
 
-    // NUEVO: Reconectar el audio si la pestaña cambia de visibilidad
     document.addEventListener("visibilitychange", () => {
       if (audioCtx && audioCtx.state === 'suspended' && !audio.paused) {
         audioCtx.resume();
       }
     });
-    
-    // REGISTRO DEL SERVICE WORKER 
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker listo'))
-            .catch(err => console.log('Error:', err));
-        });
-      }
-      // Verifica el almacenamiento del navegador al cargar la app
-      document.addEventListener('DOMContentLoaded', () => {
-        if (localStorage.getItem('meowOcultarAviso') === 'true') {
-          document.getElementById('meow-aviso-privacidad').style.display = 'none';
-        }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker listo'))
+          .catch(err => console.log('Error:', err));
       });
-      // Gestiona el cierre y guarda la decisión si se marca la casilla
-      function meowCerrarAviso() {
-        const checkbox = document.getElementById('meow-check-no-mostrar');
-        if (checkbox.checked) {
-          localStorage.setItem('meowOcultarAviso', 'true');
-        }
-        document.getElementById('meow-aviso-privacidad').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('meowOcultarAviso') === 'true') {
+        const aviso = document.getElementById('meow-aviso-privacidad');
+        if (aviso) aviso.style.display = 'none';
       }
+    });
+
+    function meowCerrarAviso() {
+      const checkbox = document.getElementById('meow-check-no-mostrar');
+      if (checkbox && checkbox.checked) {
+        localStorage.setItem('meowOcultarAviso', 'true');
+      }
+      const aviso = document.getElementById('meow-aviso-privacidad');
+      if (aviso) aviso.style.display = 'none';
+    }
   </script>
 </body>
 </html>
