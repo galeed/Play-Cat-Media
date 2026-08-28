@@ -618,9 +618,86 @@
       font-size: 0.72rem;
       color: var(--text-muted);
     }
+    
+    /* --- ESTILOS DEL AVISO GATUNO --- */
+    .meow-aviso-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 16, 21, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .meow-aviso-box {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      max-width: 320px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      color: #fff;
+    }
+
+    .meow-aviso-box h3 {
+      margin-bottom: 12px;
+      font-size: 1.2rem;
+      color: var(--accent);
+    }
+
+    .meow-aviso-box p {
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      line-height: 1.4;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .meow-checkbox-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      cursor: pointer;
+    }
+
+    .meow-btn-cerrar {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .meow-btn-cerrar:active {
+      transform: scale(0.95);
+    }
   </style>
 </head>
 <body>
+
+  <!-- AVISO DE PRIVACIDAD GATUNO -->
+  <div id="meow-aviso-privacidad" class="meow-aviso-overlay">
+    <div class="meow-aviso-box">
+      <h3>🐾 Aviso Gatuno 🐾</h3>
+      <p>Todo el procesamiento de audio se realiza de manera local en tu dispositivo. Ningún archivo o dato personal es subido a servidores externos. ¡Miau!</p>
+      <label class="meow-checkbox-label">
+        <input type="checkbox" id="meow-check-no-mostrar">
+        No volver a mostrar
+      </label>
+      <button class="meow-btn-cerrar" onclick="meowCerrarAviso()">Entendido 🐱</button>
+    </div>
+  </div>
 
   <div class="bg-blur" id="bgBlur"></div>
 
@@ -1427,6 +1504,7 @@
       });
     }
 
+    /* --- LÓGICA DEL AVISO GATUNO --- */
     document.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('meowOcultarAviso') === 'true') {
         const aviso = document.getElementById('meow-aviso-privacidad');
