@@ -1,4 +1,4 @@
-name: Compilar APK de Android
+name: Compilar APK de Android y Desplegar a Cloudflare R2
 
 on:
   workflow_dispatch:
@@ -42,8 +42,12 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Subir APK como artefacto
-        uses: actions/upload-artifact@v4
-        with:
-          name: App-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Configurar AWS CLI para Cloudflare R2
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.R2_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          aws configure set default.region auto
+
+      - name: Subir APK a Cloudflare R2
+        run: |
+          aws s3 cp android/app/build/outputs/apk/debug/app-debug.apk s3://${{ secrets.R2_BUCKET_NAME }}/app-debug.apk --endpoint-url ${{ secrets.R2_ENDPOINT_URL }}
