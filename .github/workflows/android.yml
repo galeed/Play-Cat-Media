@@ -30,6 +30,10 @@ jobs:
           cp index.html sw.js www/
           npx cap init "Meow Audio App" "com.meowaudio.app" --web-dir www
           npx cap add android
+          
+          # Solución para duplicados de Kotlin
+          echo "configurations.all { resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22' }" >> android/app/build.gradle
+          
           npx cap sync android
 
       - name: Compilar APK con Gradle
