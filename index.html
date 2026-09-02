@@ -940,6 +940,63 @@
           audioCtx.resume();
         }
       }
+      function updateAudioEffects() {
+      if (eqSelect.value !== 'bassBoost' || dolbyToggle.checked) {
+        initWebAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+  function updateAudioEffects() {
+      if (eqSelect.value !== 'electronic' || dolbyToggle.checked) {
+        initWebAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+function updateAudioEffects() {
+      if (eqSelect.value !== 'hiphop' || dolbyToggle.checked) {
+        initWebAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+    function updateAudioEffects() {
+      if (eqSelect.value !== 'jazz' || dolbyToggle.checked) {
+        initWebAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+function updateAudioEffects() {
+      if (eqSelect.value !== 'pop' || dolbyToggle.checked) {
+        initWebAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+function updateAudioEffects() {
+      if (eqSelect.value !== 'pop' || dolbyToggle.checked) {
+        initWebAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+function updateAudioEffects() {
+      if (eqSelect.value !== 'rock' || dolbyToggle.checked) {
+        initWebAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+
+
 
       if (audioCtx && eqFilters.length > 0) {
         const gains = EQ_PRESETS[eqSelect.value] || EQ_PRESETS.flat;
@@ -956,6 +1013,14 @@
         }
       }
     }
+    
+    function updateAudioEffects() {
+      if (eqSelect.value !== 'dolbyToggle' || dolbyToggle.checked) {
+        initWebAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
 
     eqSelect.addEventListener('change', updateAudioEffects);
     dolbyToggle.addEventListener('change', updateAudioEffects);
